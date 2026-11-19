@@ -18,7 +18,8 @@ DENSITY_MIN_LINES, DENSITY = 40, 0.3
 SOURCE = {".py", ".ts", ".tsx", ".js", ".jsx", ".scala", ".java", ".kt", ".go", ".rs"}
 HISTORY = re.compile(
     r"\b(changed\b.+\bto\b|renamed from\b|moved from\b|was (changed|moved|renamed|removed|replaced)\b"
-    r"|old (code|version|implementation|behaviou?r)\b)", re.I)
+    r"|old (code|version|implementation|behaviou?r)\b|\b(previously|used to|no longer|now (uses|returns|calls|does))\b)", re.I)
+NEGATIVE = re.compile(r"\b(could(n't| not)|can't|cannot|tried|didn't work|doesn't work|hack(y)?|for now|temporar(y|ily)|don'?t touch|do not touch|not sure|I think)\b", re.I)
 WHY = re.compile(r"\b(because|since(?!\s+(v?\d|\w+\s+\d{4}))|so that|to avoid|otherwise|on purpose|intentionally|workaround)\b", re.I)
 TODO = re.compile(r"\b(TODO|FIXME|HACK|XXX)\b")
 TICKET = re.compile(r"[A-Z][A-Z0-9]+-\d+|#\d+|https?://")
@@ -75,8 +76,10 @@ def comment_lines(lines: list[str], marker: str) -> list[tuple[int, str]]:
 
 
 def judge(body: str) -> str | None:
-    if HISTORY.search(body) and not WHY.search(body):
-        return "history comment, state a non-obvious WHY or delete"
+    if HISTORY.search(body):
+        return "history comment: git holds history; state the current constraint or delete"
+    if NEGATIVE.search(body):
+        return "negative or tentative comment: state the constraint positively (\"the provider rejects batches over 100\") or delete"
     if TODO.search(body) and not TICKET.search(body):
         return "TODO without a ticket id"
     if CODEISH.search(body):

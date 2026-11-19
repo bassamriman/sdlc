@@ -32,7 +32,7 @@ Tags: H = enforced by the edit hook in every language. HP = by the hook in Pytho
    Why: a float cannot represent 0.10 and a bare number carries no currency; rounding in several places loses cents that reconciliation then finds.
 15. J Names carry intent; no `Manager`, `Util`, `Helper`, no abbreviations.
    Why: a name is the cheapest documentation; a vague one means the thing has no single responsibility.
-16. H Comments only for a non-obvious WHY (constraint, invariant, external quirk). Never what, never history (`changed X to Y`), no TODO without a ticket id. J: a doc comment on every public contract (inputs, failure values, invariants); none on private code. Doc comments do not count toward density.
+16. H Comments only for a non-obvious WHY, stated positively as the constraint itself ("the provider rejects batches over 100"). Never what the code does, never history ("changed X to Y", "previously", "no longer", "now uses", dates, "fix for #123"), never negative or tentative ("couldn't do X because", "tried Y", "hack", "for now", "temporary", "don't touch", "not sure"), no section banners, no TODO without a ticket id. J: a doc comment on every public contract (inputs, failure values, invariants); none on private code. Doc comments do not count toward density.
    Why: comments that restate code rot the moment the code changes; the only comment that stays true is the reason the code is the way it is.
 17. H/L No dead code, no commented-out code (H), no unused imports or parameters (L); git holds history.
    Why: dead code is read, maintained and feared by everyone who does not know it is dead; version control already keeps it.

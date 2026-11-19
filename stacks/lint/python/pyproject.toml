@@ -3,11 +3,25 @@
 # which ty enforces through type-assertion-failure.
 [tool.ruff]
 fix = false
+target-version = "py312"
 
 [tool.ruff.lint]
 preview = true
-select = ["F", "E722", "C901", "PLR0912", "PLR0913", "PLR0915", "PLR1702", "FBT001", "FBT002",
-          "B006", "RUF012", "PLW0603", "ERA001", "ARG", "TD003", "S110", "BLE001"]
+select = [
+  "F", "E722",                                   # errors, bare except
+  "C901", "PLR0912", "PLR0913", "PLR0915", "PLR1702",  # method size and shape
+  "FBT001", "FBT002", "ARG", "RET", "SIM", "ERA001",   # flags, unused args, early return, dead code
+  "B", "RUF006", "RUF012", "PLW0603",            # mutable defaults, un-awaited tasks, mutable class attrs, globals
+  "ANN", "UP",                                   # annotations, modern syntax
+  "BLE001", "S", "TRY", "TD003",                 # broad except, security, try scope, linked TODOs
+  "DTZ", "PTH", "PLW1514",                       # aware datetimes, pathlib, explicit encoding
+  "ASYNC", "G", "LOG", "T20",                    # async blocking, log formatting, print
+  "PERF", "C4",                                  # loops and comprehensions
+]
+ignore = ["TRY003", "S101"]                      # long exception messages; assert in tests
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["ANN", "PLR2004", "S"]
 
 [tool.ruff.lint.pylint]
 max-args = 3
@@ -21,4 +35,4 @@ max-complexity = 8
 [tool.mypy]
 strict = true
 warn_unreachable = true
-enable_error_code = "exhaustive-match, possibly-undefined, redundant-expr"
+enable_error_code = "exhaustive-match, possibly-undefined, redundant-expr, truthy-bool, ignore-without-code"

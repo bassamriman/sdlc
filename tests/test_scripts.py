@@ -138,8 +138,6 @@ class ScanTests(Repo):
         # for details see: ADR-12
         # TODO(ABC-123): tighten once the provider confirms the limit
         # noqa: E501
-        # previously we retried forever; now capped at five
-        # was replaced by a queue because the list blocked the loop
         def ok(x):
             return x
     """
@@ -649,6 +647,17 @@ class GateParseTests(unittest.TestCase):
         self.assertEqual(gates.parse("diagram=requre")["diagram"], "require")
         self.assertEqual(gates.parse("")["diagram"], "off")
         self.assertEqual(gates.parse("push=autoo")["push"], "ask")
+
+
+class CommentWordingTests(unittest.TestCase):
+    def test_history_and_negative_comments_are_flagged_even_with_because(self) -> None:
+        import importlib.util
+        sys.path.insert(0, str(SCRIPTS))
+        spec = importlib.util.spec_from_file_location("scan", SCRIPTS / "scan.py")
+        scan = importlib.util.module_from_spec(spec); spec.loader.exec_module(scan)
+        for body in ("previously this used a loop", "couldn't batch because the API failed", "hack for now", "no longer needed"):
+            self.assertIsNotNone(scan.judge(body), body)
+        self.assertIsNone(scan.judge("the provider rejects batches over 100"))
 
 
 class RenderTests(unittest.TestCase):

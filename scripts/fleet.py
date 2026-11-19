@@ -566,7 +566,7 @@ def report(root: Path, cmd: str, args: list[str]) -> dict:
     return table.get(cmd, lambda: status_report(root))()
 
 
-def view(root: Path, run: bool) -> int:
+def view(root: Path, *, run: bool) -> int:
     """The agent view filtered to this fleet's sessions; prints the command, or opens it with --run."""
     command = ["claude", "agents", "--cwd", str(root)]
     if not run:
@@ -593,7 +593,7 @@ def dispatch(root: Path, cmd: str, args: list[str]) -> int:
     if cmd == "ide":
         return ide(root, args)
     if cmd == "view":
-        return view(root, "--run" in args)
+        return view(root, run="--run" in args)
     if cmd == "launch":
         return launch(root, args)
     if cmd == "wake":
