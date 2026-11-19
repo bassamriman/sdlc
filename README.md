@@ -13,7 +13,7 @@ Session-only: `claude --plugin-dir "$(pwd)"`, then `/reload-plugins` after edits
 ## Quick start
 **Single task** (in the repo, with the plugin loaded):
 ```
-/sdlc:init 105            # detect stack, record base, start a 105-minute timebox
+/sdlc:init                # detect stack, record base (add minutes for an optional timer)
 /sdlc:orient <area>       # map the code; ends with a brief-mode diagram and three ranked pitfalls
 /sdlc:clarify <ask>       # assumptions and questions, pitfalls turned into questions
 /sdlc:plan <feature>      # slices with test, files, verify
