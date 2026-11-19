@@ -1,6 +1,6 @@
 # sdlc
 
-SDLC for Claude Code with deep review, built for two jobs: shipping a working feature fast under a timebox, and daily solo development through branch, PR, review and rebase. Guarantees live in hooks, not prompts. Build spec and research trail: [SPEC.md](SPEC.md).
+A Claude Code plugin for the software development lifecycle: planning, test-first slices, checks, review, diagrams, pull requests, rebasing and multi-agent fleets. Hooks enforce the gates and workspace isolation. Design notes: [SPEC.md](SPEC.md).
 
 ## Install (local)
 From the root of this checkout:

@@ -1,7 +1,7 @@
 # sdlc: specification
 
 ## Goal
-An SDLC for Claude Code: a lean single-agent loop that speeds up solo and team development, with deep review built in (architecture and tail-latency lens, strict coding standard), plus resumable context, the PR lifecycle, opt-in telemetry with a reflect loop, and a multi-agent fleet layer with an orchestrator that stays dormant in single-repo work.
+A Claude Code plugin for the software development lifecycle: a single-agent loop, review lenses (architecture, tail latency, database, coding standard), plus resumable context, the PR lifecycle, opt-in telemetry with a reflect loop, and a multi-agent fleet layer with an orchestrator that stays dormant in single-repo work.
 
 ## Design constraints
 1. Few words per verb: every SKILL.md under 30 lines, hard output caps, detail in `references/`.
@@ -12,7 +12,7 @@ An SDLC for Claude Code: a lean single-agent loop that speeds up solo and team d
 6. Only `gh` for GitHub, only when a PR is requested; no named MCP servers.
 7. Reuse platform primitives (`Agent` with worktree isolation, `SendMessage`, `/simplify`, `/code-review`, artifacts) instead of rebuilding them.
 8. Every hook script runs on Python 3.9+, because a hook that cannot start is a hook that is silently off.
-9. Guarantees live in hooks and scripts, never only in prompts: isolation, gates, status reporting, waking.
+9. Hooks and scripts enforce isolation, gates, status reporting, waking.
 
 ## Review lenses
 - standards: 24 rules tagged H (hook, all languages), HP (hook, Python), L (stack linter, fragments shipped), J (judgement); each with a one-line why.

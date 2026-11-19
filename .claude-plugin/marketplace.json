@@ -2,6 +2,6 @@
   "name": "sdlc-local",
   "owner": { "name": "Bassam Riman" },
   "plugins": [
-    { "name": "sdlc", "source": "./", "description": "Barebone SDLC with stack packs" }
+    { "name": "sdlc", "source": "./", "description": "Claude Code plugin for the software development lifecycle, with stack packs" }
   ]
 }
