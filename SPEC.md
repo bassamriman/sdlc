@@ -1,7 +1,7 @@
 # sdlc: specification
 
 ## Goal
-A company-agnostic SDLC for Claude Code: a lean single-agent loop that speeds up solo and team development, with deep review built in (architecture and tail-latency lens, strict coding standard), plus resumable context, the PR lifecycle, opt-in telemetry with a reflect loop, and a multi-agent fleet layer with an orchestrator that stays dormant in single-repo work.
+An SDLC for Claude Code: a lean single-agent loop that speeds up solo and team development, with deep review built in (architecture and tail-latency lens, strict coding standard), plus resumable context, the PR lifecycle, opt-in telemetry with a reflect loop, and a multi-agent fleet layer with an orchestrator that stays dormant in single-repo work.
 
 ## Design constraints
 1. Few words per verb: every SKILL.md under 30 lines, hard output caps, detail in `references/`.

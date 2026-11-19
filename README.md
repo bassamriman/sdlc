@@ -1,6 +1,6 @@
 # sdlc
 
-Company-agnostic SDLC for Claude Code with deep review, built for two jobs: shipping a working feature fast under a timebox, and daily solo development through branch, PR, review and rebase. Guarantees live in hooks, not prompts. Build spec and research trail: [SPEC.md](SPEC.md).
+SDLC for Claude Code with deep review, built for two jobs: shipping a working feature fast under a timebox, and daily solo development through branch, PR, review and rebase. Guarantees live in hooks, not prompts. Build spec and research trail: [SPEC.md](SPEC.md).
 
 ## Install (local)
 From the root of this checkout:
