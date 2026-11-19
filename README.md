@@ -23,7 +23,7 @@ Session-only: `claude --plugin-dir "$(pwd)"`, then `/reload-plugins` after edits
 ```
 `/sdlc:diagram <type> <subject> --show` opens a diagram in Chrome.
 
-**Fleet of agents on one epic:**
+**Fleet of agents on one epic:** quickest start: `mkdir <root> && cd <root> && python3 ~/dev/sdlc/scripts/fleet.py up --run`, then give the orchestrator the repo and the goal; it drafts the split, you approve, it clones and launches. Or by hand:
 1. Write `fleet.json` (agents, branches, briefs, `start`/`merge` dependencies, `gates`, `model`, `effort`); format in `skills/fleet/references/fleet.md`.
 2. `python3 scripts/fleet.py init fleet.json`, then trust each clone once with the `cd <clone> && claude` lines it prints. Drop design docs into `<root>/resources/`.
 3. `python3 scripts/fleet.py up --run` starts the orchestrator session; it launches waves, answers agents over the bus and wakes them. You merge PRs; agents rebase on their own.

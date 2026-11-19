@@ -602,6 +602,15 @@ def dispatch(root: Path, cmd: str, args: list[str]) -> int:
     return 0
 
 
+def bootstrap(root: Path) -> Path:
+    """An empty fleet in this folder, so the orchestrator can start before any agent exists; /sdlc:orchestrate defines them."""
+    draft = root / "fleet.json"
+    if not draft.exists():
+        draft.write_text(json.dumps({"name": root.name, "agents": []}, indent=2) + "\n")
+    init(draft, root)
+    return root
+
+
 def main(argv: list[str]) -> int:
     cmd, args = (argv[0] if argv else "status"), argv[1:]
     if cmd == "init":
@@ -609,6 +618,8 @@ def main(argv: list[str]) -> int:
         print(json.dumps(init(Path(args[0]), root_arg), indent=2))
         return 0
     root = find_root(Path(os.environ.get("SDLC_FLEET_ROOT") or Path.cwd()))
+    if root is None and cmd == "up":
+        root = bootstrap(Path(os.environ.get("SDLC_FLEET_ROOT") or Path.cwd()).resolve())
     if root is None:
         print("no .sdlc/fleet.json found here or above; run: fleet.py init <fleet.json>")
         return 2
