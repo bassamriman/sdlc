@@ -1,0 +1,6 @@
+# javac flags for Error Prone + NullAway (Var is experimental and must be named). Build fails on ERROR checks.
+-XDcompilePolicy=simple --should-stop=ifError=FLOW -processorpath <errorprone,nullaway jars>
+-Xplugin:ErrorProne -Xep:UnusedVariable:ERROR -Xep:UnusedMethod:ERROR -Xep:CheckReturnValue:ERROR
+ -Xep:ReturnValueIgnored:ERROR -Xep:FutureReturnValueIgnored:ERROR -Xep:EmptyCatch:ERROR
+ -Xep:CatchAndPrintStackTrace:ERROR -Xep:MissingCasesInEnumSwitch:ERROR -Xep:Var:ERROR
+ -Xep:NullAway:ERROR -XepOpt:NullAway:AnnotatedPackages=<your.root.package>

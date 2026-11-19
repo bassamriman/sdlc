@@ -1,0 +1,17 @@
+# Merge the [lints] tables into Cargo.toml (Cargo 1.74+). Check: cargo clippy --all-targets --no-deps -- -D warnings
+[lints.rust]
+unused = { level = "deny", priority = -1 }   # rustc lint group; name UNVERIFIED in this pass
+
+[lints.clippy]
+too_many_arguments = "deny"
+too_many_lines = "deny"
+cognitive_complexity = "deny"
+fn_params_excessive_bools = "deny"
+excessive_nesting = "deny"
+wildcard_enum_match_arm = "deny"
+let_underscore_must_use = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+todo = "deny"
+unimplemented = "deny"

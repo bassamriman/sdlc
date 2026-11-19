@@ -1,0 +1,5 @@
+too-many-arguments-threshold = 3
+too-many-lines-threshold = 15
+cognitive-complexity-threshold = 8
+max-fn-params-bools = 0
+excessive-nesting-threshold = 2

@@ -1,0 +1,7 @@
+{
+  "name": "sdlc-local",
+  "owner": { "name": "Bassam Riman" },
+  "plugins": [
+    { "name": "sdlc", "source": "./", "description": "Barebone SDLC with stack packs" }
+  ]
+}

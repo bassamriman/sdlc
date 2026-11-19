@@ -1,0 +1,25 @@
+# detekt 1.23 keys; detekt 2.0 renames them (allowedLines, allowedFunctionParameters, allowedComplexity, allowedDepth).
+# 1.x reports at >= threshold (UNVERIFIED), hence the +1. Check: detekt --config detekt.yml --build-upon-default-config --input src
+complexity:
+  LongMethod: { active: true, threshold: 16 }
+  LongParameterList: { active: true, functionThreshold: 4, constructorThreshold: 4 }
+  CyclomaticComplexMethod: { active: true, threshold: 9 }
+  CognitiveComplexMethod: { active: true, threshold: 9 }
+  NestedBlockDepth: { active: true, threshold: 3 }
+potential-bugs:
+  ElseCaseInsteadOfExhaustiveWhen: { active: true }
+  IgnoredReturnValue: { active: true }
+exceptions:
+  SwallowedException: { active: true }
+  TooGenericExceptionCaught: { active: true }
+empty-blocks:
+  EmptyCatchBlock: { active: true, allowedExceptionNameRegex: '^$' }
+style:
+  VarCouldBeVal: { active: true }
+  UnusedPrivateMember: { active: true }
+  UnusedParameter: { active: true }
+  UnusedPrivateProperty: { active: true }
+  ForbiddenComment:
+    active: true
+    comments: [{ value: 'TODO', reason: 'cite an issue: TODO(PROJ-123)' }]
+    allowedPatterns: 'TODO\(PROJ-\d+\)'

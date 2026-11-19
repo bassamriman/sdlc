@@ -1,0 +1,25 @@
+{
+  "pack": "python",
+  "markers": [
+    [
+      "pyproject.toml",
+      "requirements.txt",
+      "setup.py"
+    ]
+  ],
+  "languages": [
+    "python"
+  ],
+  "commands": {
+    "test": "uv run pytest -x -q",
+    "typecheck": "uvx ty check",
+    "lint": "uv run ruff check .",
+    "format": "uv run ruff format .",
+    "run": null
+  },
+  "check": [
+    "test",
+    "typecheck",
+    "lint"
+  ]
+}

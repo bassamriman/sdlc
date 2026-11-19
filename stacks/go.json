@@ -1,0 +1,22 @@
+{
+  "pack": "go",
+  "markers": [
+    [
+      "go.mod"
+    ]
+  ],
+  "languages": [
+    "go"
+  ],
+  "commands": {
+    "test": "go test ./...",
+    "typecheck": "go vet ./...",
+    "lint": "golangci-lint run",
+    "format": "gofmt -w ."
+  },
+  "check": [
+    "typecheck",
+    "test",
+    "lint"
+  ]
+}

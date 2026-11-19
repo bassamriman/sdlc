@@ -1,0 +1,6 @@
+{
+  "name": "sdlc",
+  "version": "0.1.0",
+  "description": "Barebone, company-agnostic SDLC for Claude Code: clarify, plan, test-first slices, evidence gate, coding standards and architecture review. Stack packs add commands and idioms.",
+  "keywords": ["sdlc", "code-review", "architecture-review", "tdd"]
+}

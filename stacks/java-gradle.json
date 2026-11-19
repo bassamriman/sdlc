@@ -1,0 +1,23 @@
+{
+  "pack": "java-gradle",
+  "markers": [
+    [
+      "build.gradle",
+      "build.gradle.kts"
+    ]
+  ],
+  "languages": [
+    "java"
+  ],
+  "commands": {
+    "test": "./gradlew test",
+    "typecheck": "./gradlew compileJava",
+    "lint": "./gradlew check -x test",
+    "format": "./gradlew spotlessApply"
+  },
+  "check": [
+    "typecheck",
+    "test",
+    "lint"
+  ]
+}

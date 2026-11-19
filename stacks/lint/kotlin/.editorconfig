@@ -1,0 +1,4 @@
+# ktlint: no-unused-imports is off by default since 1.7.0. Check: ktlint 'src/**/*.kt'
+[*.{kt,kts}]
+ktlint_standard_no-unused-imports = enabled
+ktlint_standard_no-wildcard-imports = enabled

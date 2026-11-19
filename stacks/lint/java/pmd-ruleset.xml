@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!-- PMD 7 (ExhaustiveSwitchHasDefault needs 7.10+). Check: pmd check -d src -R pmd-ruleset.xml -f text -->
+<ruleset name="sdlc" xmlns="http://pmd.sourceforge.net/ruleset/2.0.0">
+  <description>sdlc coding standard</description>
+  <rule ref="category/java/design.xml/ExcessiveParameterList"><properties><property name="minimum" value="4"/></properties></rule>
+  <rule ref="category/java/design.xml/CognitiveComplexity"><properties><property name="reportLevel" value="9"/></properties></rule>
+  <rule ref="category/java/design.xml/AvoidDeeplyNestedIfStmts"/>
+  <rule ref="category/java/bestpractices.xml/ExhaustiveSwitchHasDefault"/>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod"/>
+  <rule ref="category/java/bestpractices.xml/UnusedFormalParameter"/>
+  <rule ref="category/java/bestpractices.xml/AvoidReassigningParameters"/>
+  <rule ref="category/java/errorprone.xml/EmptyCatchBlock"/>
+  <rule ref="category/java/codestyle.xml/LocalVariableCouldBeFinal"/>
+</ruleset>

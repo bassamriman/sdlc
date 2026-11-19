@@ -1,0 +1,24 @@
+# Merge into the repo's pyproject.toml. Check: ruff check --no-fix . && mypy .
+# ty: no unused-code or exhaustiveness rule yet; end every match on a closed type with `case _: assert_never(x)`,
+# which ty enforces through type-assertion-failure.
+[tool.ruff]
+fix = false
+
+[tool.ruff.lint]
+preview = true
+select = ["F", "E722", "C901", "PLR0912", "PLR0913", "PLR0915", "PLR1702", "FBT001", "FBT002",
+          "B006", "RUF012", "PLW0603", "ERA001", "ARG", "TD003", "S110", "BLE001"]
+
+[tool.ruff.lint.pylint]
+max-args = 3
+max-statements = 15
+max-branches = 8
+max-nested-blocks = 2
+
+[tool.ruff.lint.mccabe]
+max-complexity = 8
+
+[tool.mypy]
+strict = true
+warn_unreachable = true
+enable_error_code = "exhaustive-match, possibly-undefined, redundant-expr"

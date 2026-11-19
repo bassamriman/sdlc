@@ -1,0 +1,22 @@
+{
+  "pack": "rust",
+  "markers": [
+    [
+      "Cargo.toml"
+    ]
+  ],
+  "languages": [
+    "rust"
+  ],
+  "commands": {
+    "test": "cargo test",
+    "typecheck": "cargo check",
+    "lint": "cargo clippy -- -D warnings",
+    "format": "cargo fmt"
+  },
+  "check": [
+    "typecheck",
+    "test",
+    "lint"
+  ]
+}

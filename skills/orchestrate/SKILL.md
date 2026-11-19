@@ -1,0 +1,18 @@
+---
+name: orchestrate
+description: Run an epic as its orchestrator - split a design into agents with a dependency graph, write fleet.json, launch each READY wave, exchange messages with agents over the fleet bus, keep the epic's context, and finish when every agent is done. Use inside the orchestrator session of a fleet, or from any session to start one.
+argument-hint: "[design.md or task description]"
+allowed-tools: Read, Write, Bash(python3:*), Bash(git:*), Bash(claude:*), Bash(cd:*)
+model: sonnet
+effort: low
+---
+Scripts: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/fleet.py"` and `bus.py`. Format and semantics: `${CLAUDE_PLUGIN_ROOT}/skills/fleet/references/fleet.md`.
+
+1. **Define** (when `.sdlc/fleet.json` is missing, or re-run to refine without overwriting the human's edits): read `<root>/resources/` and the design or task given. One agent per repo or per independent branch, each with a one-paragraph brief that names its contract (what it exposes, what it consumes). `depends` edges: `start` when the agent needs the other's artifact to begin, `merge` when it only needs it to land. Write the draft to `fleet.json` in your workspace, show the table (agent, repo, branch, depends, gates) and get a yes, then `fleet.py init fleet.json --root <fleet root>`. Tell the human each clone must be trusted once.
+2. **Launch**: `fleet.py orchestrate --run` starts every READY agent not yet launched and prints waves, your inbox, and the next step.
+3. **Wait**: `fleet.py orchestrate --wait 540` returns when any status or message changes. Repeat 2 and 3.
+4. **Messages**: `bus.py inbox` reads what agents sent you; `bus.py send <agent|all> <text>` answers and prints the `SendMessage` calls to make next: one per recipient session, a one-line pointer to the outbox. Make them (the gate is auto within the epic) so the recipient wakes instead of polling; the outbox stays the record. Message only what the graph cannot see (a contract detail, a changed decision, an unblock). Status is never asked over messages.
+5. **Blocked or stalled agent**: `blocked` status, or a name in `stalled` (saved in-progress, session not working; orchestrate wakes it once per step): read its `.sdlc/context.md`, decide, message it; if it needs a human, say so and stop.
+6. After every step, update `context.md` in your workspace (agents with status, open messages, next) and `<root>/resources/` for anything every agent must know: a contract that changed, a decision, an answer you gave twice.
+
+Output per step, max 12 lines: wave table, messages received, what you sent, next. Finish when `epic_done` is true: summarise PRs per agent.

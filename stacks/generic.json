@@ -1,0 +1,17 @@
+{
+  "pack": "generic",
+  "markers": [],
+  "languages": [],
+  "commands": {
+    "test": null,
+    "typecheck": null,
+    "lint": null,
+    "format": null,
+    "run": null
+  },
+  "check": [
+    "test",
+    "typecheck",
+    "lint"
+  ]
+}

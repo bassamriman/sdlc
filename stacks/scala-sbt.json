@@ -1,0 +1,23 @@
+{
+  "pack": "scala-sbt",
+  "markers": [
+    [
+      "build.sbt"
+    ]
+  ],
+  "languages": [
+    "scala"
+  ],
+  "commands": {
+    "test": "sbt -batch test",
+    "typecheck": "sbt -batch compile",
+    "lint": "sbt -batch \"scalafixAll --check\" scalafmtCheckAll",
+    "format": "sbt -batch scalafixAll scalafmtAll"
+  },
+  "check": [
+    "typecheck",
+    "test",
+    "lint"
+  ],
+  "notes": "lint needs sbt-scalafix and sbt-scalafmt in project/plugins.sbt; stacks/lint/scala/ has the build.sbt and .scalafix.conf fragments. An sbt command with arguments is one quoted argument."
+}

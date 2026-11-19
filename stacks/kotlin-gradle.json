@@ -1,0 +1,28 @@
+{
+  "pack": "kotlin-gradle",
+  "markers": [
+    [
+      "build.gradle.kts",
+      "build.gradle"
+    ],
+    [
+      "*.kt"
+    ]
+  ],
+  "languages": [
+    "kotlin",
+    "java"
+  ],
+  "commands": {
+    "test": "./gradlew test",
+    "typecheck": "./gradlew compileKotlin",
+    "lint": "./gradlew check -x test",
+    "format": "./gradlew ktlintFormat"
+  },
+  "check": [
+    "typecheck",
+    "test",
+    "lint"
+  ],
+  "notes": "check -x test runs whatever analysis the build binds (detekt, ktlint); if nothing is bound it passes vacuously. stacks/lint/kotlin/ holds detekt.yml and .editorconfig; init replaces commands with the repo's own tasks."
+}

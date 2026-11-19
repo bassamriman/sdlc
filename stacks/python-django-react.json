@@ -1,0 +1,36 @@
+{
+  "pack": "python-django-react",
+  "markers": [
+    [
+      "manage.py"
+    ],
+    [
+      "tsconfig.json",
+      "package.json"
+    ]
+  ],
+  "languages": [
+    "python",
+    "typescript"
+  ],
+  "commands": {
+    "test": "uv run pytest -x -q",
+    "typecheck": "uvx ty check",
+    "lint": "uv run ruff check .",
+    "format": "uv run ruff format .",
+    "migrate_make": "uv run python manage.py makemigrations",
+    "migrate": "uv run python manage.py migrate",
+    "migrate_check": "uv run python manage.py makemigrations --check --dry-run",
+    "fe_types": "pnpm --dir frontend exec tsc --noEmit",
+    "fe_lint": "pnpm --dir frontend run lint",
+    "fe_build": "pnpm --dir frontend run build"
+  },
+  "check": [
+    "test",
+    "typecheck",
+    "lint",
+    "migrate_check",
+    "fe_types"
+  ],
+  "notes": "Prefer the repo's own make targets (make test, make typecheck) when they exist; init rewrites commands from Makefile and CLAUDE.md. Django: parse request bodies into pydantic or Ninja Schemas at the edge, keep rules in pure functions, use select_related/prefetch_related, wrap multi-row writes in transaction.atomic, Decimal for money."
+}

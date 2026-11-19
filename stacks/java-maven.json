@@ -1,0 +1,23 @@
+{
+  "pack": "java-maven",
+  "markers": [
+    [
+      "pom.xml"
+    ]
+  ],
+  "languages": [
+    "java"
+  ],
+  "commands": {
+    "test": "mvn -q test",
+    "typecheck": "mvn -q compile",
+    "lint": "mvn -q verify -DskipTests",
+    "format": "mvn -q spotless:apply"
+  },
+  "check": [
+    "typecheck",
+    "test",
+    "lint"
+  ],
+  "notes": "verify -DskipTests runs the analysis plugins the pom binds (checkstyle, pmd, errorprone, spotbugs); if none is bound it passes vacuously. To enforce the standard, wire stacks/lint/java/ and set lint to mvn -q checkstyle:check pmd:check."
+}
