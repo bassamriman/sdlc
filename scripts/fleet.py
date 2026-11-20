@@ -196,14 +196,12 @@ def wake_command(root: Path, name: str, text: str) -> str | None:
     sid = session_id(root, name)
     if not sid:
         return None
-    display = shlex.quote(session_name(root, name))  # a resume would otherwise auto-title the session and lose the fleet name
     fleet = load_fleet(root)
-    plugin = f" --plugin-dir {shlex.quote(fleet['plugin_dir'])}" if fleet.get("plugin_dir") else ""  # a resume does not re-apply flags: without this the plugin, its hooks and gates are absent
-    plugin += shared_flag(root)
     agent = next((a for a in fleet["agents"] if a["name"] == name), None)
     env = " ".join(f"{k}={shlex.quote(v)}" for k, v in (agent_env(root, agent, fleet) if agent else {}).items())  # pinned settings back this up
     prefix = f"{env} " if env else ""
-    return f"cd {shlex.quote(str(session_cwd(root, name, sid)))} && {prefix}claude --resume {sid} --bg --name {display}{plugin}{model_flags(fleet, agent)} {shlex.quote(text)}"
+    # a background session keeps its own saved options (name, plugin dir, model, mode); passing any flag on resume starts a copy
+    return f"cd {shlex.quote(str(session_cwd(root, name, sid)))} && {prefix}claude --resume {sid} --bg {shlex.quote(text)}"
 
 
 def wake_now(root: Path, name: str, text: str) -> bool:

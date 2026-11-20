@@ -441,15 +441,15 @@ class OrchestratorTests(FleetTests):
         (self.root / "orchestrator" / "sessions.json").write_text(json.dumps({"contracts": "abc-123"}))  # as if looked up by name after launch
         wake = run("fleet.py", "wake", "contracts", "look at your inbox", cwd=self.root).stdout
         self.assertTrue(wake.startswith(f"cd {self.root / 'contracts' / 'contracts'} && "))
-        for part in ("SDLC_AGENT_NAME=contracts", "claude --resume abc-123 --bg --name sdlc/epic/contracts", f"--add-dir {self.root / 'resources'}", "'look at your inbox'"):
-            self.assertIn(part, wake)
+        self.assertIn("SDLC_AGENT_NAME=contracts", wake)
+        self.assertTrue(wake.rstrip().endswith("claude --resume abc-123 --bg 'look at your inbox'"), "no flags on resume: any flag forks a copy")
         fleet = json.loads((self.root / ".sdlc" / "fleet.json").read_text())
         (self.root / ".sdlc" / "fleet.json").write_text(json.dumps({**fleet, "plugin_dir": "/p/sdlc"}))
-        self.assertIn("--plugin-dir /p/sdlc --add-dir", run("fleet.py", "wake", "contracts", "look at your inbox", cwd=self.root).stdout)
+        self.assertNotIn("--plugin-dir", run("fleet.py", "wake", "contracts", "look at your inbox", cwd=self.root).stdout)
         fleet["model"], fleet["agents"][0]["effort"] = "sonnet", "low"
         (self.root / ".sdlc" / "fleet.json").write_text(json.dumps(fleet))
         self.assertIn("--model sonnet --effort low --permission-mode auto", run("fleet.py", "launch", "contracts", cwd=self.root).stdout)
-        self.assertIn("--model sonnet --effort low --permission-mode auto 'look", run("fleet.py", "wake", "contracts", "look at your inbox", cwd=self.root).stdout)
+        self.assertNotIn("--model", run("fleet.py", "wake", "contracts", "look at your inbox", cwd=self.root).stdout)
         fleet["permission_mode"] = "bypassPermissions"
         (self.root / ".sdlc" / "fleet.json").write_text(json.dumps(fleet))
         self.assertIn("--permission-mode auto", run("fleet.py", "launch", "contracts", cwd=self.root).stdout, "bypass is never passed through")
