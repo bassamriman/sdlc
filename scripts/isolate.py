@@ -130,7 +130,7 @@ def edit_decision(tool_input: dict, allowed: list[str], workspace: str) -> int:
 def repo_of(path: str, home: str) -> str:
     """The folder whose .sdlc governs the path: the nearest one that has .sdlc (so a submodule or nested repo inside the
     clone is still governed by the clone), else the nearest git repository, else the workspace itself."""
-    chain, here = [], os.path.dirname(path)
+    chain, here = [], path if os.path.isdir(path) else os.path.dirname(path)
     while here.startswith(home) and here != os.path.dirname(here):
         chain.append(here)
         here = os.path.dirname(here)
@@ -144,6 +144,8 @@ def process_gap(target: str, workspace: str) -> str | None:
     real, home = os.path.realpath(target), os.path.realpath(workspace)
     if os.environ.get("SDLC_AGENT_NAME") == "orchestrator" or not real.startswith(home + os.sep) or "/.sdlc/" in real + "/":
         return None
+    if os.path.isdir(real):
+        return None  # a folder is a git operation's repository (rebase, merge, checkout), not a source edit
     sdlc = os.path.join(repo_of(real, home), ".sdlc")  # the clone sits one level below the agent's workspace
     if not os.path.exists(os.path.join(sdlc, "stack.json")):
         return "/sdlc:init"

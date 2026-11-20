@@ -8,6 +8,8 @@ effort: low
 ---
 Do not write code. Do not answer your own questions.
 
+Write every assumption to `.sdlc/assumptions.md`, one line each; commits and the PR carry them (`${CLAUDE_PLUGIN_ROOT}/skills/check/references/record.md`).
+
 Output, hard cap 8 bullets:
 - Restate the requirement in one sentence.
 - 3 assumptions you will proceed on unless corrected.

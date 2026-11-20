@@ -17,5 +17,5 @@ Output, hard cap 10 lines:
 - Two trade-offs you chose and what you gave up.
 - What you deliberately did not do.
 - Next steps, max 3.
-- Commit message for whatever is still uncommitted: imperative subject under 72 characters; body only for a non-obvious why. If every slice is already committed, say so instead.
+- Commit message for whatever is still uncommitted, in the record format (`${CLAUDE_PLUGIN_ROOT}/skills/check/references/record.md`): subject under 72 characters, then Assumptions, Design and Pitfalls fixed or deferred. If every slice is already committed, say so instead.
 Next: commit, then `/sdlc:pr open` when a PR is wanted, then `/sdlc:save`.

@@ -32,6 +32,10 @@ def decision(out) -> str:
     return json.loads(out.stdout)["hookSpecificOutput"]["permissionDecision"]
 
 
+RECORDED = "Assumptions: none. Pitfalls: none. Design: docs/design/x.md"
+COMMIT = f'git commit -m "x" -m "{RECORDED}"'
+
+
 class Repo(unittest.TestCase):
     def setUp(self) -> None:
         self.dir = Path(tempfile.mkdtemp())
@@ -43,6 +47,8 @@ class Repo(unittest.TestCase):
         git("add", "."), git("commit", "-qm", "init")
         (self.dir / ".sdlc").mkdir()
         self.stack({"test": "echo ok"}, ["test"])
+        (self.dir / "docs" / "design").mkdir(parents=True)
+        (self.dir / "docs" / "design" / "x.md").write_text("# design\n")  # the record gate wants an updated design doc with code
 
     def stack(self, commands: dict, check: list) -> None:
         (self.dir / ".sdlc" / "stack.json").write_text(json.dumps({"pack": "t", "commands": commands, "check": check}))
@@ -51,7 +57,7 @@ class Repo(unittest.TestCase):
         return run("guard.py", cwd=self.dir, stdin={"cwd": str(cwd or self.dir), "tool_input": {"command": command}})
 
     def commit_gate(self) -> int:
-        return self.gate("git commit -m x").returncode
+        return self.gate(COMMIT).returncode
 
     def scan(self, name: str, body: str) -> str:
         path = self.dir / name
@@ -72,9 +78,9 @@ class GateTests(Repo):
         self.assertEqual(self.commit_gate(), 2)
 
     def test_git_global_flags_and_gate_off(self) -> None:
-        self.assertEqual(self.gate(f"git -C {self.dir} commit -m x").returncode, 2)
-        self.assertEqual(self.gate('git -c user.name="a b" commit -m x').returncode, 2)
-        out = run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "tool_input": {"command": "git commit -m x"}}, env={"SDLC_GATE": "off"})
+        self.assertEqual(self.gate(f"git -C {self.dir} commit -m x -m '{RECORDED}'").returncode, 2)
+        self.assertEqual(self.gate(f'git -c user.name="a b" commit -m x -m "{RECORDED}"').returncode, 2)
+        out = run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "tool_input": {"command": COMMIT}}, env={"SDLC_GATE": "off"})
         self.assertEqual(out.returncode, 0)
 
     def test_push_asks_and_force_push_denied(self) -> None:
@@ -90,7 +96,7 @@ class GateTests(Repo):
         self.assertEqual(decision(run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "tool_input": {"command": "git branch -D x"}}, env=env)), "ask")
         (self.dir / "new.py").write_text("x = 1\n")
         off = {"SDLC_GATES": "commit=off"}
-        self.assertEqual(run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "tool_input": {"command": "git commit -m x"}}, env=off).returncode, 0)
+        self.assertEqual(run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "tool_input": {"command": COMMIT}}, env=off).returncode, 0)
 
     def test_autopilot_lifts_push_and_pr_gates_only(self) -> None:
         env = {"SDLC_GATES": "push=auto,pr=auto,message=auto,branch_delete=auto"}
@@ -99,13 +105,13 @@ class GateTests(Repo):
         force = run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "tool_input": {"command": "git push -f origin main"}}, env=env)
         self.assertEqual(decision(force), "deny")
         (self.dir / "new.py").write_text("x = 1\n")
-        self.assertEqual(run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "tool_input": {"command": "git commit -m x"}}, env=env).returncode, 2)
+        self.assertEqual(run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "tool_input": {"command": COMMIT}}, env=env).returncode, 2)
 
     def test_commit_then_push_is_gated_before_the_push_asks(self) -> None:
         (self.dir / "new.py").write_text("x = 1\n")
-        self.assertEqual(self.gate("git commit -m x && git push").returncode, 2)
+        self.assertEqual(self.gate(COMMIT + " && git push").returncode, 2)
         run("check.py", cwd=self.dir)
-        out = self.gate("git commit -m x && git push")
+        out = self.gate(COMMIT + " && git push")
         self.assertEqual((out.returncode, decision(out)), (0, "ask"))
         self.assertEqual(self.gate("git commit-tree HEAD^{tree}").stdout, "")
 
@@ -119,7 +125,7 @@ class GateTests(Repo):
         self.assertEqual(self.commit_gate(), 2)
 
     def test_gate_fails_closed_when_it_cannot_run(self) -> None:
-        out = self.gate("git commit -m x", cwd=self.dir / "gone")
+        out = self.gate(COMMIT, cwd=self.dir / "gone")
         self.assertEqual(out.returncode, 2)
         self.assertIn("could not run", out.stderr)
 
@@ -392,6 +398,9 @@ class FleetTests(unittest.TestCase):
         env = {"SDLC_AGENT_WORKSPACE": str(self.root / "api")}
         bash = lambda c: run("isolate.py", cwd=self.root, stdin={"tool_name": "Bash", "tool_input": {"command": c}}, env=env)
         self.assertEqual(decision(bash(f"echo x > {self.root}/api/api/out.txt")), "deny", "shell writes face the process gate too")
+        (self.root / "api" / "api").mkdir(parents=True, exist_ok=True)
+        for git_op in (f"cd {self.root}/api/api && git rebase origin/main", f"git -C {self.root}/api/api merge origin/main"):
+            self.assertEqual(bash(git_op).stdout, "", "git operations are not source edits")
         ready_clone(self.root / "api" / "api")
         for command in (f"echo x > {self.root}/web/web/README.md", f"git -C {self.root}/web/web merge f",
                         f"cd {self.root}/web/web && git checkout f", f"cp -r skills {self.root}/web/"):
@@ -630,13 +639,14 @@ class ArchDiffTests(Repo):
         self.assertIn('views (+3/-0)', out)
         self.assertIn("-->", out, "the import edge views -> models")
         env = {"SDLC_GATES": "diagram=require"}
-        blocked = run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "tool_input": {"command": "git commit -m x"}}, env=env)
+        (self.dir / "docs" / "design" / "x.md").write_text("# design, updated with the change\n")
+        blocked = run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "tool_input": {"command": COMMIT}}, env=env)
         self.assertEqual(blocked.returncode, 2)
         self.assertIn("architecture diagram", blocked.stderr)
         run("archdiff.py", base, cwd=self.dir)
         self.assertTrue((self.dir / "docs" / "arch" / "main.md").exists())
         run("check.py", cwd=self.dir)
-        self.assertEqual(run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "tool_input": {"command": "git commit -m x"}}, env=env).returncode, 0)
+        self.assertEqual(run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "tool_input": {"command": COMMIT}}, env=env).returncode, 0)
 
 
 class E2EFleetTests(unittest.TestCase):
@@ -748,6 +758,20 @@ class EdgeCaseTests(unittest.TestCase):
         git("mv", "a.py", "b.py"); (d / "b.py").write_text("y\n")
         out = run("stopgate.py", cwd=d, stdin={}, env={"SDLC_AGENT_WORKSPACE": str(d), "SDLC_AGENT_NAME": "a"}).stdout
         self.assertIn("/sdlc:save", out, "a renamed file still counts as a change after the save")
+
+
+class RecordGateTests(Repo):
+    def test_commit_needs_assumptions_pitfalls_and_a_design_update(self) -> None:
+        (self.dir / "new.py").write_text("x = 1\n")
+        run("check.py", cwd=self.dir)
+        bare = self.gate('git commit -m "add x"')
+        self.assertEqual(bare.returncode, 2)
+        self.assertIn("Assumptions:", bare.stderr)
+        self.assertEqual(self.gate(COMMIT).returncode, 0)
+        (self.dir / "docs" / "design" / "x.md").unlink()
+        run("check.py", cwd=self.dir)
+        self.assertIn("docs/design", self.gate(COMMIT).stderr, "code without an updated design doc is refused")
+        self.assertEqual(self.gate('grep -rn "git commit" .').stdout, "", "text inside a quoted pattern is not a commit")
 
 
 class PruneScopeTests(unittest.TestCase):

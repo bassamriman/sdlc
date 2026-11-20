@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import os
 
-DEFAULTS = {"commit": "check", "push": "ask", "pr": "ask", "message": "ask", "branch_delete": "ask", "diagram": "off"}
-STRICT = {**DEFAULTS, "diagram": "require"}  # a misspelled value tightens to the strictest choice
+DEFAULTS = {"commit": "check", "push": "ask", "pr": "ask", "message": "ask", "branch_delete": "ask", "diagram": "off", "record": "require"}
+STRICT = {**DEFAULTS, "diagram": "require", "record": "require"}  # a misspelled value tightens to the strictest choice
 AUTOPILOT = {**DEFAULTS, "push": "auto", "pr": "auto", "message": "auto", "branch_delete": "auto"}
 VALUES = {"commit": {"check", "off"}, "push": {"ask", "auto"}, "pr": {"ask", "auto"}, "message": {"ask", "auto"},
-          "branch_delete": {"ask", "auto"}, "diagram": {"off", "require"}}
+          "branch_delete": {"ask", "auto"}, "diagram": {"off", "require"}, "record": {"off", "require"}}
 
 
 def parse(spec: str) -> dict:

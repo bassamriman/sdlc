@@ -8,17 +8,19 @@ import json
 import os
 import re
 import sys
+from pathlib import Path
 
 import gates
 import state as st
 
 VALUE = r"""(?:[^\s"']+|"[^"]*"|'[^']*')+"""
-GIT = rf"\bgit\b(?:\s+(?:-C|-c|--git-dir|--work-tree)\s+{VALUE}|\s+-\S+)*\s+"
+AT_COMMAND = r"(?:^|[;&|(\n]\s*|\b(?:then|do|sudo|exec|command)\s+)(?:\w+=\S*\s+)*"  # command position only: not text inside a quoted grep pattern
+GIT = AT_COMMAND + rf"git\b(?:\s+(?:-C|-c|--git-dir|--work-tree)\s+{VALUE}|\s+-\S+)*\s+"
 COMMIT = re.compile(GIT + r"commit(?![\w-])")
 PUSH = re.compile(GIT + r"push\b(?P<rest>[^|&;]*)")
 BRANCH_DELETE = re.compile(GIT + r"branch\b[^|&;]*\s(-d|-D|--delete)\b")
 REMOTE_DELETE = re.compile(r"(^|\s)(--delete|-d|:\S+)(\s|$)")
-PR_ACTION = re.compile(r"\bgh\s+pr\s+(create|merge)\b")
+PR_ACTION = re.compile(AT_COMMAND + r"gh\s+pr\s+(create|merge)\b")
 FORCE = re.compile(r"(^|\s)(--force|-[a-zA-Z]*f[a-zA-Z]*|\+\S+)(\s|$)")
 RELEVANT = re.compile(r"\b(git|gh)\b")
 
@@ -47,9 +49,48 @@ def diagram_missing(cwd: str | None) -> bool:
     return touches_code and not any(p.startswith("docs/arch/") for p in changed)
 
 
+RECORD_TEMPLATE = """Commit message body must carry the design record:
+  Assumptions:
+  - <each assumption the change relies on, or: none>
+  Design: docs/design/<branch>.md (entity, flow, state and API diagrams for what this change touches; updated in this commit)
+  Pitfalls:
+  - fixed: <hazard> at <file:line>
+  - deferred: <hazard>, because <reason>   (or: none)"""
+MESSAGE_FILE = re.compile(r"(?:-F|--file)[= ]\s*(\S+)")
+SOURCE_EXT = ("py", "ts", "tsx", "js", "jsx", "java", "scala", "kt", "go", "rs")
+
+
+def commit_message(command: str, cwd: str | None) -> str:
+    """The message as the commit will see it: the command text (-m and heredocs) plus any -F file."""
+    found = MESSAGE_FILE.search(command)
+    if not found:
+        return command
+    path = Path(cwd or ".") / found.group(1).strip("'\"")
+    return command + (path.read_text() if path.exists() else "")
+
+
+def record_missing(command: str, cwd: str | None) -> list[str]:
+    """Sections the commit message lacks; amending without a new message and a gate set to off are exempt."""
+    if gates.current().get("record") == "off" or "--no-edit" in command:
+        return []
+    text = commit_message(command, cwd)
+    missing = [s for s in ("Assumptions:", "Pitfalls:") if s not in text]
+    changed = st.changed_paths(st.root(cwd))
+    if any(p.rsplit(".", 1)[-1] in SOURCE_EXT for p in changed):
+        if "Design:" not in text:
+            missing.append("Design:")
+        elif not any(p.startswith("docs/design/") for p in changed):
+            missing.append("an updated docs/design/ file in this commit")
+    return missing
+
+
 def commit_blocked(command: str, cwd: str | None) -> bool:
     if not COMMIT.search(command) or gates.current()["commit"] == "off":
         return False
+    missing = record_missing(command, cwd)
+    if missing:
+        print(f"sdlc: commit lacks {', '.join(missing)}.\n{RECORD_TEMPLATE}", file=sys.stderr)
+        return True
     if diagram_missing(cwd):
         print("sdlc: this epic requires an architecture diagram of the diff in every commit. Run archdiff.py, git add docs/arch/, then commit.", file=sys.stderr)
         return True
