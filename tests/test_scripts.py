@@ -683,6 +683,16 @@ class ReflectFixTests(Repo):
         self.assertNotIn("uncommitted lines", second, "once per commit, not on every edit")
 
 
+class MissingToolTests(Repo):
+    def test_missing_linter_passes_with_a_hint_but_missing_tests_fail(self) -> None:
+        self.stack({"test": "echo ok", "lint": "definitely-not-a-tool-xyz ."}, ["test", "lint"])
+        out = run("check.py", cwd=self.dir)
+        self.assertEqual(out.returncode, 0, out.stdout)
+        self.assertIn("MISSING lint", out.stdout)
+        self.stack({"test": "definitely-not-a-tool-xyz"}, ["test"])
+        self.assertNotEqual(run("check.py", cwd=self.dir).returncode, 0, "tests never pass by absence")
+
+
 class PruneScopeTests(unittest.TestCase):
     def test_only_idle_fleet_named_duplicates_are_pruned(self) -> None:
         sys.path.insert(0, str(SCRIPTS))

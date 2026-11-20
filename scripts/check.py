@@ -3,16 +3,25 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import sys
 
 import state as st
 
 
-def run(command: str, cwd) -> tuple[bool, str]:
+MISSING_TOOL = re.compile(r"command not found|Failed to spawn|No such file or directory: '[^']+'|not found in PATH|is not recognized", re.I)
+OPTIONAL = {"lint", "format", "fmt"}  # a missing linter is an environment gap; tests and types never pass by absence
+
+
+def run(command: str, cwd) -> tuple[str, str]:
+    """pass, fail or missing (the tool itself could not be started), with the output tail."""
     out = subprocess.run(command, shell=True, cwd=cwd, capture_output=True, text=True)
-    tail = "\n".join((out.stdout + out.stderr).strip().splitlines()[-12:])
-    return out.returncode == 0, tail
+    text = (out.stdout + out.stderr).strip()
+    tail = "\n".join(text.splitlines()[-12:])
+    if out.returncode == 0:
+        return "pass", tail
+    return ("missing" if out.returncode == 127 or MISSING_TOOL.search(text[-600:]) else "fail"), tail
 
 
 def load_stack(root) -> dict | str:
@@ -27,11 +36,14 @@ def load_stack(root) -> dict | str:
 
 
 def run_one(name: str, command: str, root) -> bool:
-    ok, tail = run(command, root)
-    print(f"{'PASS' if ok else 'FAIL'} {name}: {command}")
-    if not ok:
+    verdict, tail = run(command, root)
+    if verdict == "missing" and name in OPTIONAL:
+        print(f"MISSING {name}: {command} (tool not installed; not blocking). Fix .sdlc/stack.json, e.g. `uvx ruff check .` or `npx eslint .`")
+        return True
+    print(f"{verdict.upper()} {name}: {command}")
+    if verdict != "pass":
         print(tail)
-    return ok
+    return verdict == "pass"
 
 
 def run_checks(stack: dict, root) -> bool:

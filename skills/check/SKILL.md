@@ -10,6 +10,7 @@ Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/check.py"` and report its output ver
 Rules:
 - No "done", "fixed" or "passing" claim without this run's output in the same message.
 - On FAIL: show the failing command and the relevant lines, fix the cause, rerun. Never weaken a test or silence a check to get green. If the cause is unclear after one look, `/sdlc:debug`.
+- `MISSING` means a lint or format tool is not installed: the gate passes, but fix `.sdlc/stack.json` now with the runner form it suggests (`uvx ruff check .`, `npx eslint .`) and rerun. A missing test or typecheck tool is a FAIL.
 - `SKIP` means the pack has no command for that step; say so. `RED: nothing ran` means stack.json is empty: fill it.
 
 Next: commit (`git commit`), or `/sdlc:wrap` when the task is done.
