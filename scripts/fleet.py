@@ -725,6 +725,14 @@ def reset_run(root: Path, agent: dict, fleet: dict) -> str | None:
     return kept
 
 
+def relaunch(root: Path, name: str) -> int:
+    """Launch again and record it, so the next orchestrate step does not start a second session."""
+    code = launch(root, [name, "--run"])
+    if code == 0:
+        _store(launched_file(root), sorted(set(_load(launched_file(root), [])) | {name}))
+    return code
+
+
 def reset(root: Path, args: list[str]) -> int:
     """`reset <agent> [--run]`: stop the session, keep any work on a local backup branch, put the clone back on a fresh branch
     from the base, clear its .sdlc state, and relaunch it with the same brief. Without --run, print the plan only."""
@@ -739,10 +747,7 @@ def reset(root: Path, args: list[str]) -> int:
         return 0
     kept = reset_run(root, agent, fleet)
     print(json.dumps({"reset": agent["name"], "work_kept_on": kept}, indent=2))
-    code = launch(root, [agent["name"], "--run"])
-    if code == 0:
-        _store(launched_file(root), sorted(set(_load(launched_file(root), [])) | {agent["name"]}))
-    return code
+    return relaunch(root, agent["name"])
 
 
 def dispatch(root: Path, cmd: str, args: list[str]) -> int:

@@ -104,6 +104,11 @@ def bash_decision(tool_input: dict, allowed: list[str], cwd: str) -> None:
     strays = [t for t in targets if not inside(t, allowed, system_ok=True)]
     if strays:
         return decide("ask", f"sdlc fleet: command writes or changes git state outside the workspace: {strays[0]}")
+    shell_process_gate(targets)
+
+
+def shell_process_gate(targets: list[str]) -> None:
+    """Writes through the shell meet the same rule as edits: no source change before /sdlc:init and /sdlc:plan."""
     workspace = os.environ.get("SDLC_AGENT_WORKSPACE", "")
     missing = next((m for t in targets if "$" not in t for m in [process_gap(t, workspace)] if m), None)
     if missing:
