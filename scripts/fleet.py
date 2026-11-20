@@ -667,7 +667,53 @@ def retire(root: Path, args: list[str]) -> int:
     return 0
 
 
+def backup_work(repo: Path, name: str) -> str | None:
+    """Commit everything on a local backup branch, so a reset never loses work; None when there was nothing to keep."""
+    git = lambda *a: subprocess.run(["git", "-C", str(repo), *a], capture_output=True, text=True)
+    if not unpushed(repo):
+        return None
+    branch = f"backup/{name}-{time.strftime('%Y%m%d-%H%M%S')}"
+    git("switch", "-c", branch)
+    git("add", "-A", "--", ".", ":(exclude).sdlc")
+    git("commit", "-q", "--no-verify", "-m", f"backup of {name} before fleet reset")
+    return branch
+
+
+def reset_run(root: Path, agent: dict, fleet: dict) -> str | None:
+    repo, name = repo_dir(root, agent), agent["name"]
+    if session_id(root, name):
+        stop_and_wait(root, name)
+        subprocess.run(["claude", "rm", session_id(root, name)[:8]], capture_output=True)
+    kept = backup_work(repo, name)
+    subprocess.run(["git", "-C", str(repo), "fetch", "-q", "origin"], capture_output=True)
+    subprocess.run(["git", "-C", str(repo), "switch", "-f", "-C", agent["branch"], f"origin/{fleet.get('base', 'main')}"], capture_output=True)
+    shutil.rmtree(repo / ".sdlc", ignore_errors=True)
+    for path in (launched_file(root), retired_file(root)):
+        _store(path, [n for n in _load(path, []) if n != name])
+    write_settings(root, agent, fleet)
+    return kept
+
+
+def reset(root: Path, args: list[str]) -> int:
+    """`reset <agent> [--run]`: stop the session, keep any work on a local backup branch, put the clone back on a fresh branch
+    from the base, clear its .sdlc state, and relaunch it with the same brief. Without --run, print the plan only."""
+    fleet = load_fleet(root)
+    agent = next((a for a in fleet["agents"] if args and a["name"] == args[0]), None)
+    if agent is None:
+        print(f"unknown agent; one of {[a['name'] for a in fleet['agents']]}")
+        return 2
+    if "--run" not in args:
+        lost = unpushed(repo_dir(root, agent)) if repo_dir(root, agent).exists() else []
+        print(json.dumps({"would_reset": agent["name"], "backup_branch_for": lost, "relaunch_on": agent["branch"]}, indent=2))
+        return 0
+    kept = reset_run(root, agent, fleet)
+    print(json.dumps({"reset": agent["name"], "work_kept_on": kept}, indent=2))
+    return launch(root, [agent["name"], "--run"])
+
+
 def dispatch(root: Path, cmd: str, args: list[str]) -> int:
+    if cmd == "reset":
+        return reset(root, args)
     if cmd == "retire":
         return retire(root, args)
     if cmd == "ide":
