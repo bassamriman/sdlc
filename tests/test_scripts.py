@@ -680,14 +680,14 @@ class CommentWordingTests(unittest.TestCase):
 
 
 class RenderTests(unittest.TestCase):
-    def test_mermaid_blocks_become_live_diagrams_and_text_is_escaped(self) -> None:
+    def test_page_renders_markdown_tables_and_mermaid(self) -> None:
         d = Path(tempfile.mkdtemp())
-        (d / "flow.md").write_text("# Flow <x>\n```mermaid\nsequenceDiagram\n  A->>B: call\n```\n| Pitfall | Fix |\n")
-        out = run("render.py", str(d / "flow.md"), "--print", cwd=d).stdout.strip()
-        page = Path(out).read_text()
-        self.assertIn('<div class="mermaid">sequenceDiagram', page)
-        self.assertIn("A-&gt;&gt;B: call", page)
-        self.assertIn("# Flow &lt;x&gt;", page)
+        (d / "flow.md").write_text("# Flow\n```mermaid\nsequenceDiagram\n  A->>B: call\n```\n| Pitfall | Fix |\n|---|---|\n| N+1 | annotate |\n</script>\n")
+        page = Path(run("render.py", str(d / "flow.md"), "--print", cwd=d).stdout.strip()).read_text()
+        self.assertIn("marked.parse", page)
+        self.assertIn("| N+1 | annotate |", page)
+        self.assertIn("language-mermaid", page)
+        self.assertEqual(page.count("</script>"), 3, "a </script> in the source cannot close the markdown tag")
 
 
 class CompatTests(unittest.TestCase):
