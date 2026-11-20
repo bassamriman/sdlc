@@ -584,8 +584,48 @@ def status_report(root: Path) -> dict:
     return {"epic": fleet["name"], "agents": [read_status(root, a) for a in fleet["agents"]]}
 
 
+WATCH_INTERVAL = 60
+
+
+def watch_signature(root: Path) -> str:
+    """What changes when something happens outside any session: the base tip (a PR merged on GitHub) and each status."""
+    statuses = ",".join(f"{a['name']}={read_status(root, a)['status']}" for a in load_fleet(root)["agents"])
+    return f"{base_sha(root, load_fleet(root))}|{statuses}"
+
+
+def watch(root: Path) -> int:
+    """Background poller started by `up`: when a merge or status change happens that no hook saw (a PR merged on GitHub),
+    run one orchestrate step, which wakes whoever is waiting, and wake the orchestrator. Exits when the epic is done."""
+    last = watch_signature(root)
+    while True:
+        time.sleep(WATCH_INTERVAL)
+        now = watch_signature(root)
+        if now != last:
+            step = orchestrate(root, run=True)
+            wake_now(root, bus.ORCHESTRATOR, "Fleet: something changed outside the sessions (a merge or a status); run fleet.py orchestrate --run and read your inbox.")
+            if step.get("epic_done"):
+                return 0
+            last = now
+
+
+def start_watch(root: Path) -> None:
+    """One watcher per fleet, recorded by pid; a dead pid is replaced."""
+    pid_file = root / bus.ORCHESTRATOR / "watch.pid"
+    try:
+        os.kill(int(pid_file.read_text()), 0)
+        return
+    except (OSError, ValueError):
+        pass
+    proc = subprocess.Popen([sys.executable, __file__, "watch"], cwd=root, start_new_session=True,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    pid_file.write_text(str(proc.pid))
+
+
 def up(root: Path, *, run: bool) -> dict:
-    """Make sure the orchestrator session exists and is awake: launch it when absent, wake it when idle, leave it when busy."""
+    """Make sure the orchestrator session exists and is awake: launch it when absent, wake it when idle, leave it when busy;
+    and keep the merge watcher running."""
+    if run:
+        start_watch(root)
     state = session_state(root, bus.ORCHESTRATOR)
     if state == "busy":
         return {"orchestrator": "busy"}
@@ -758,6 +798,8 @@ def reset(root: Path, args: list[str]) -> int:
 
 
 def dispatch(root: Path, cmd: str, args: list[str]) -> int:
+    if cmd == "watch":
+        return watch(root)
     if cmd == "reset":
         return reset(root, args)
     if cmd == "retire":
