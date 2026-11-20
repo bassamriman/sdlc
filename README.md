@@ -42,7 +42,7 @@ Session-only: `claude --plugin-dir "$(pwd)"`, then `/reload-plugins` after edits
 | | `check` | evidence gate: test, typecheck, lint; unblocks commit | script output |
 | | `debug <error>` | reproduce, one hypothesis at a time, regression test | 10 min under a timebox |
 | | `wrap` | gate, review, simplify, 60-second summary, commit message | 10 |
-| review | `review [range] [--lenses standards,arch,p99,db,tests,security] [--full]` | fan-out: one reviewer agent per lens (standards, arch, p99, db, tests, security), big diffs split by directory, findings merged, every finding refuted by an independent agent | 15 |
+| review | `review [range] [--lenses standards,arch,p99,db,tests,security] [--broad] [--no-refute] [--no-sweep] [--full]` | fan-out: one reviewer agent per lens (standards, arch, p99, db, tests, security), big diffs split by directory, findings merged, focused on the diff and what it calls unless `--broad`, every finding refuted by an independent agent unless `--no-refute` | 15 |
 | | `standards [file\|range]` | 24-rule coding standard, judgement rules only, confidence 80+ | 10 |
 | | `arch [design\|file\|range]` | 18-question architecture lens + p99 checklist + 16-question database lens (transactions, isolation, locks, constraints, indexes, online migrations) | 12 |
 | | `diagram <er\|sequence\|flow\|state\|modules> <subject\|path> [--keep] [--show]` | Mermaid er/sequence/flow/state/modules of the current code, hazards (N+1, app-side filtering, missing transaction, missing index, ...) marked in place with a verified/inferred pitfalls table; under a timebox, brief mode (two diagrams, three ranked pitfalls, three summary lines); `--show` renders locally in Chrome | file |
