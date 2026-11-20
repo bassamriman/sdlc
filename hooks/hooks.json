@@ -113,6 +113,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/scripts/stopgate.py\"",
+            "timeout": 20
+          }
+        ]
+      }
     ]
   }
 }

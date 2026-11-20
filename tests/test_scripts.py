@@ -680,14 +680,16 @@ class GateParseTests(unittest.TestCase):
 
 
 class StopGateTests(Repo):
-    def test_stop_is_refused_once_while_work_is_newer_than_the_save(self) -> None:
+    def test_agent_is_sent_on_while_the_plan_has_work_and_never_loops(self) -> None:
         env = {"SDLC_AGENT_WORKSPACE": str(self.dir), "SDLC_AGENT_NAME": "api"}
-        (self.dir / "work.py").write_text("x = 1\n")
-        self.assertIn("/sdlc:save", run("stopgate.py", cwd=self.dir, stdin={}, env=env).stdout)
-        self.assertEqual(run("stopgate.py", cwd=self.dir, stdin={"stop_hook_active": True}, env=env).stdout, "", "never traps")
-        (self.dir / ".sdlc").mkdir(exist_ok=True)
-        time.sleep(0.05)
+        (self.dir / ".sdlc" / "plan.md").write_text("1. a\n2. b\n")
         (self.dir / ".sdlc" / "context.md").write_text("**Status**: in-progress\n")
+        self.assertIn("next slice", run("stopgate.py", cwd=self.dir, stdin={}, env=env).stdout)
+        self.assertEqual(run("stopgate.py", cwd=self.dir, stdin={}, env=env).stdout, "", "no commit since the nudge: let it end")
+        git = lambda *a: subprocess.run(["git", "-C", str(self.dir), "-c", "user.email=t@t", "-c", "user.name=t", *a], check=True, capture_output=True)
+        git("commit", "-q", "--allow-empty", "-m", "slice 1")
+        self.assertIn("next slice", run("stopgate.py", cwd=self.dir, stdin={}, env=env).stdout, "progress made: keep going")
+        (self.dir / ".sdlc" / "context.md").write_text("**Status**: blocked: needs a decision\n")
         self.assertEqual(run("stopgate.py", cwd=self.dir, stdin={}, env=env).stdout, "")
         self.assertEqual(run("stopgate.py", cwd=self.dir, stdin={}, env={"SDLC_AGENT_WORKSPACE": ""}).stdout, "", "inert outside a fleet")
 
@@ -749,15 +751,6 @@ class EdgeCaseTests(unittest.TestCase):
         with unittest.mock.patch.object(fleet, "gh_out", return_value="0" * 40):
             self.assertFalse(fleet.pr_merged_by_branch(repo, "fix/x"), "the old PR head does not contain this HEAD")
 
-    def test_stop_gate_follows_renames(self) -> None:
-        d = Path(tempfile.mkdtemp())
-        git = lambda *a: subprocess.run(["git", "-C", str(d), "-c", "user.email=t@t", "-c", "user.name=t", *a], check=True, capture_output=True)
-        git("init", "-q"); (d / "a.py").write_text("x\n"); git("add", "."); git("commit", "-qm", "a")
-        (d / ".sdlc").mkdir(); (d / ".sdlc" / "context.md").write_text("saved\n")
-        time.sleep(0.05)
-        git("mv", "a.py", "b.py"); (d / "b.py").write_text("y\n")
-        out = run("stopgate.py", cwd=d, stdin={}, env={"SDLC_AGENT_WORKSPACE": str(d), "SDLC_AGENT_NAME": "a"}).stdout
-        self.assertIn("/sdlc:save", out, "a renamed file still counts as a change after the save")
 
 
 class RecordGateTests(Repo):
