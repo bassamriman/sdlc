@@ -164,7 +164,7 @@ def session_state(root: Path, name: str) -> str:
     row = session_row(root, name)
     if row is None:
         return "stopped" if session_id(root, name) else "absent"  # agent view may drop a finished session; its conversation still resumes
-    if row.get("status") == "busy" or row.get("state") == "working":
+    if row.get("status") == "busy":  # `state` is the session's own last label (working, done, blocked), not liveness
         return "busy"
     return "idle" if alive(row) else "stopped"
 

@@ -98,7 +98,7 @@ def main(argv: list[str]) -> int:
     root, me = identity()
     cmd = argv[0] if argv else "inbox"
     commands = {
-        "send": lambda: print(json.dumps(sent(root, me, argv), indent=2)) if len(argv) >= 3 else None,
+        "send": lambda: (print(json.dumps(sent(root, me, argv), indent=2)), wake_recipient(argv[1])) if len(argv) >= 3 else None,
         "peek": lambda: print(unread_count(root, me)),
         "log": lambda: show(all_messages(root)),
         "inbox": lambda: show(inbox(root, me, unread_only="--all" not in argv)),
@@ -107,6 +107,13 @@ def main(argv: list[str]) -> int:
         return usage(cmd)
     commands[cmd]()
     return 0
+
+
+def wake_recipient(to: str) -> None:
+    """A message to the orchestrator wakes it when idle, so delivery never depends on the sender also ringing it."""
+    if to in (ORCHESTRATOR, "all") and os.environ.get("SDLC_AGENT_NAME") != ORCHESTRATOR:
+        import notify  # lazy: notify imports this module
+        notify.wake_orchestrator(Path(os.environ.get("SDLC_FLEET_ROOT", ".")))
 
 
 def usage(cmd: str) -> int:
