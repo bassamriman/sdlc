@@ -11,6 +11,7 @@ import sys
 import tempfile
 import textwrap
 import unittest
+import unittest.mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -680,6 +681,27 @@ class ReflectFixTests(Repo):
         second = run("scan.py", cwd=self.dir, stdin=event).stderr
         self.assertIn("uncommitted lines", first)
         self.assertNotIn("uncommitted lines", second, "once per commit, not on every edit")
+
+
+class PruneScopeTests(unittest.TestCase):
+    def test_only_idle_fleet_named_duplicates_are_pruned(self) -> None:
+        sys.path.insert(0, str(SCRIPTS))
+        import fleet
+        root = Path(tempfile.mkdtemp())
+        (root / ".sdlc").mkdir()
+        (root / ".sdlc" / "fleet.json").write_text(json.dumps({"name": "epic", "agents": [{"name": "api", "repo": "r/api.git", "branch": "b"}]}))
+        rows = [{"sessionId": "real-1", "id": "real", "name": "sdlc/epic/api", "status": "idle", "cwd": str(root / "api")},
+                {"sessionId": "copy-2", "id": "copy", "name": "sdlc/epic/api", "status": "idle", "cwd": str(root / "api")},
+                {"sessionId": "busy-3", "id": "busy", "name": "sdlc/epic/api", "status": "busy", "cwd": str(root / "api")},
+                {"sessionId": "mine-4", "id": "mine", "name": "trust the clone", "status": "idle", "cwd": str(root / "api")}]
+        with unittest.mock.patch.object(fleet, "listed_sessions", return_value=rows), \
+             unittest.mock.patch.object(fleet, "session_id", side_effect=lambda r, n: "real-1" if n == "api" else None), \
+             unittest.mock.patch.object(fleet, "waves", return_value={"done": []}):
+            self.assertEqual(fleet.prune_victims(root, finished=False), ["copy"])
+        with unittest.mock.patch.object(fleet, "listed_sessions", return_value=rows), \
+             unittest.mock.patch.object(fleet, "session_id", return_value=None), \
+             unittest.mock.patch.object(fleet, "waves", return_value={"done": []}):
+            self.assertEqual(fleet.prune_victims(root, finished=False), [], "an unknown real session means prune nothing")
 
 
 class CommentWordingTests(unittest.TestCase):

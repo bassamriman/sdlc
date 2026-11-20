@@ -221,18 +221,25 @@ def wake_now(root: Path, name: str, text: str) -> bool:
     return out.returncode == 0
 
 
-def under_root(root: Path, cwd: str) -> bool:
-    return cwd == str(root) or cwd.startswith(str(root).rstrip("/") + "/")
-
-
 def prune_victims(root: Path, *, finished: bool) -> list[str]:
-    """Sessions of this fleet that are not the recorded real ones; with finished, also the real sessions of done agents. Identity by id, never by title."""
+    """Only the fleet's own leftovers: an idle session carrying a fleet session name (sdlc/<epic>/<agent>) that is not that
+    agent's recorded session; with finished, also done agents' real sessions. A session the human opened (any other name),
+    or anything busy, is never touched."""
     names = [a["name"] for a in load_fleet(root)["agents"]] + [bus.ORCHESTRATOR]
+    titles = {session_name(root, n): n for n in names}
     owner = {sid: n for n in names for sid in [session_id(root, n)] if sid}  # resolve by name first, so an empty cache never marks live sessions stray
     done = set(waves(root)["done"])
-    return [row.get("id") or row["sessionId"][:8] for row in listed_sessions()
-            if row.get("sessionId") and under_root(root, row.get("cwd", ""))
-            and (row["sessionId"] not in owner or (finished and owner[row["sessionId"]] in done))]
+    victims = []
+    for row in listed_sessions():
+        sid, title = row.get("sessionId"), row.get("name", "")
+        if not sid or title not in titles or row.get("status") == "busy":
+            continue
+        agent = titles[title]
+        known = session_id(root, agent)  # no known real session for this agent (empty or partial lookup): prune nothing of it
+        duplicate = known is not None and sid != known and agent != bus.ORCHESTRATOR
+        if duplicate or (finished and owner.get(sid) in done):
+            victims.append(row.get("id") or sid[:8])
+    return victims
 
 
 def prune(root: Path, *, finished: bool, run: bool) -> dict:
