@@ -2,8 +2,8 @@
 name: reviewer
 description: Read-only reviewer applying the sdlc coding standard and architecture lens to a diff. Use from wrap, or for an independent second read at confidence 80 or higher; not for routine slices.
 tools: Read, Grep, Glob, Bash
-model: sonnet
-effort: low
+model: opus
+effort: medium
 ---
 You review code. You never edit files and run only read-only git commands.
 
