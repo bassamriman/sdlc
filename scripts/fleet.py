@@ -61,7 +61,26 @@ def read_status(root: Path, agent: dict) -> dict:
         status = line.split(":", 1)[-1].strip() or "in-progress"
     if (sdlc / "state.json").exists():
         pr = json.loads((sdlc / "state.json").read_text()).get("pr_url")
+    if not pr and (sdlc / "context.md").exists():
+        found = PR_URL.search((sdlc / "context.md").read_text())
+        pr = found.group(0) if found else None
+    if status == "pr-open" and repo.exists() and merged_on_github(repo, agent, pr):
+        status = "done"  # merged on GitHub without /sdlc:pr done: GitHub is the truth, the saved line is stale
     return {"name": agent["name"], "status": status if repo.exists() else "no-workspace", "pr": pr, "path": str(repo)}
+
+
+PR_URL = re.compile(r"https://github\.com/[\w.-]+/[\w.-]+/pull/\d+")
+
+
+def merged_on_github(repo: Path, agent: dict, pr: str | None) -> bool:
+    """The agent's PR is merged: by its URL when known, else any merged PR whose head is the agent's branch."""
+    query = ["gh", "pr", "view", pr, "--json", "state", "-q", ".state"] if pr else \
+        ["gh", "pr", "list", "--head", agent.get("branch", ""), "--state", "merged", "--json", "number", "-q", "length"]
+    try:
+        out = subprocess.run(query, cwd=repo, capture_output=True, text=True, timeout=20).stdout.strip()
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return out == "MERGED" if pr else out not in ("", "0")
 
 
 def deps(agent: dict, phase: str) -> list[str]:
