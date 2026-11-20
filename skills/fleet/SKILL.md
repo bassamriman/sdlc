@@ -9,10 +9,10 @@ effort: low
 ---
 Script: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/fleet.py"`. Definition format and an example: `${CLAUDE_PLUGIN_ROOT}/skills/fleet/references/fleet.md`.
 
-- **init <fleet.json>**: creates `<root>/<agent>/` with a `BRIEF.md` and a clone on the agent's branch; idempotent. Confirm before cloning (network, disk). Tell the user each new clone must be trusted once (`claude` there interactively) before `--bg` launches work.
+- **init <fleet.json>**: creates `<root>/<agent>/` with a `BRIEF.md` and a clone on the agent's branch; idempotent. The approved `fleet.json` is the go-ahead; clone without asking again. A new clone must be trusted once (the human, or their auto-trust job) before a launch works.
 - **status**: one line per agent from its own `.sdlc/context.md` and `state.json`. Status is read, never asked for over messages.
-- **run**: `fleet.py waves`, then for each READY agent show its launch command and ask once for the whole wave; run the approved ones with `launch <agent> --run`. Each session is named `sdlc/<epic>/<agent>` and starts with `/sdlc:rebase` onto the base, `/sdlc:init`, `bus.py inbox`, then `/sdlc:load` if a saved context exists, otherwise the brief via `/sdlc:orient`. BLOCKED agents are listed with what they wait on; RUNNING ones with what they cannot land until.
-- **launch <agent>**: one agent, same confirmation.
+- **run**: `fleet.py waves`, then run `launch <agent> --run` for each READY agent; the approved split is the go-ahead, so no second confirmation. Each session is named `sdlc/<epic>/<agent>` and starts with `/sdlc:rebase` onto the base, `/sdlc:init`, `bus.py inbox`, then `/sdlc:load` if a saved context exists, otherwise the brief via `/sdlc:orient`. BLOCKED agents are listed with what they wait on; RUNNING ones with what they cannot land until.
+- **launch <agent>**: one agent, the same way.
 
 Inside an agent session `SDLC_AGENT_WORKSPACE` is set: the hook denies edits outside the workspace and gates `SendMessage` per the epic. To talk to a peer or the orchestrator: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/bus.py" send <agent|all|orchestrator> <text>` writes your outbox and prints the `SendMessage` doorbells to ring next; `bus.py inbox` reads yours. Message only what the graph cannot see; status is derived from saved contexts. `/sdlc:orchestrate` runs the epic from the orchestrator session (`launch orchestrator`). Re-enter a stopped agent with `claude --resume`.
 

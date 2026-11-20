@@ -346,7 +346,7 @@ class FleetTests(unittest.TestCase):
         self.assertIn(f"SDLC_AGENT_WORKSPACE={self.root / 'api'}", command)
         self.assertIn("--name sdlc/epic/api", command)
         self.assertIn("rebase this branch onto origin/main", command)
-        self.assertIn("Never push", command)
+        self.assertIn("push and open the draft PR", command)
         self.assertNotIn("--plugin-dir", command)
         self.assertIn("--model sonnet --effort low --permission-mode auto", command, "speed by default")
         self.assertEqual(run("fleet.py", "view", cwd=self.root).stdout.strip(), f"claude agents --cwd {self.root}")
