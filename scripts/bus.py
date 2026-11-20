@@ -6,6 +6,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -112,10 +113,21 @@ def main(argv: list[str]) -> int:
 
 
 def wake_recipient(to: str) -> None:
-    """A message to the orchestrator wakes it when idle, so delivery never depends on the sender also ringing it."""
-    if to in (ORCHESTRATOR, "all") and os.environ.get("SDLC_AGENT_NAME") != ORCHESTRATOR:
-        import notify  # lazy: notify imports this module
-        notify.wake_orchestrator(Path(os.environ.get("SDLC_FLEET_ROOT", ".")))
+    """Every message wakes its idle recipient, so delivery never depends on the sender also ringing it: the orchestrator,
+    one named agent, or every active agent for `all`. Detached, so the sender never waits on claude."""
+    root = os.environ.get("SDLC_FLEET_ROOT")
+    if not root:
+        return
+    me = os.environ.get("SDLC_AGENT_NAME")
+    if to == "all":
+        targets = ["--all"] if me == ORCHESTRATOR else [ORCHESTRATOR]
+    else:
+        targets = [] if to == me else [to]
+    script = str(Path(__file__).with_name("fleet.py"))
+    for target in targets:
+        text = "Fleet: new message for you; read it (bus.py inbox), act on it, then /sdlc:save."
+        command = [sys.executable, script, "fanout-wake", "--run"] if target == "--all" else [sys.executable, script, "wake", target, text, "--run"]
+        subprocess.Popen(command, cwd=root, start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
 def usage(cmd: str) -> int:

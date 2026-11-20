@@ -598,6 +598,13 @@ def up(root: Path, *, run: bool) -> dict:
     return {"orchestrator": state, "woken": wake_now(root, bus.ORCHESTRATOR, text) if run else None}
 
 
+def wake_active(root: Path, *, run: bool) -> dict:
+    """Wake every idle agent that is neither done nor retired; the message itself is already on the bus."""
+    text = "Fleet: new broadcast, run bus.py inbox and act on it, then /sdlc:save."
+    woken = [name for name in active(root) if session_state(root, name) in ("idle", "stopped") and (wake_now(root, name, text) if run else True)]
+    return {"woken": woken}
+
+
 def fanout(root: Path, text: str, *, run: bool) -> dict:
     """Broadcast from the orchestrator identity, then wake every idle agent so nobody waits for a doorbell."""
     if run:
@@ -627,7 +634,7 @@ def report(root: Path, cmd: str, args: list[str]) -> dict:
     run, text = "--run" in args, " ".join(a for a in args if a != "--run")
     if cmd == "orchestrate" and "--wait" in args:
         return {"changed": wait_for_change(root, float(args[args.index("--wait") + 1]))}
-    table = {"up": lambda: up(root, run=run), "fanout": lambda: fanout(root, text, run=run), "prune": lambda: prune(root, finished="--done" in args, run=run),
+    table = {"fanout-wake": lambda: wake_active(root, run=run), "up": lambda: up(root, run=run), "fanout": lambda: fanout(root, text, run=run), "prune": lambda: prune(root, finished="--done" in args, run=run),
              "orchestrate": lambda: orchestrate(root, run=run), "waves": lambda: waves(root)}
     return table.get(cmd, lambda: status_report(root))()
 
