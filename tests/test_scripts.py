@@ -693,6 +693,18 @@ class MissingToolTests(Repo):
         self.assertNotEqual(run("check.py", cwd=self.dir).returncode, 0, "tests never pass by absence")
 
 
+class TelemetryIntentTests(unittest.TestCase):
+    def test_typed_skills_count_and_wake_prompts_are_not_intents(self) -> None:
+        sys.path.insert(0, str(SCRIPTS))
+        import record
+        prompt = lambda p: record.from_event({"hook_event_name": "UserPromptSubmit", "prompt": p, "cwd": "/x"})
+        typed = prompt("<command-message>sdlc:review</command-message>\n<command-name>/sdlc:review</command-name>\n<command-args>--broad</command-args>")
+        self.assertEqual((typed["kind"], typed["skill"], typed["by"]), ("skill", "sdlc:review", "human"))
+        self.assertEqual(prompt("/sdlc:pr done")["skill"], "sdlc:pr")
+        self.assertIsNone(prompt("Fleet: an agent reported; run fleet.py orchestrate --run"))
+        self.assertEqual(prompt("boot the service")["kind"], "intent")
+
+
 class PruneScopeTests(unittest.TestCase):
     def test_only_idle_fleet_named_duplicates_are_pruned(self) -> None:
         sys.path.insert(0, str(SCRIPTS))

@@ -5,6 +5,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import re
 import shlex
 import sys
 from pathlib import Path
@@ -61,12 +62,26 @@ def outcome(event: dict) -> bool | None:
     return not (response.get("is_error") or response.get("interrupted"))
 
 
+TYPED_SKILL = re.compile(r"(?:<command-name>|^)/(sdlc:[\w-]+)(?:</command-name>)?\s*(.*)", re.S)
+AUTOMATED = ("Fleet:", "Fleet orchestrator:")  # wake prompts written by fleet.py, not by a human
+
+
+def from_prompt(base: dict, prompt: str) -> dict | None:
+    """A typed /sdlc:<verb> counts as a skill use by the human; wake prompts are not intents; everything else is one."""
+    typed = TYPED_SKILL.search(prompt)
+    if typed:
+        args = re.sub(r"</?command-[a-z]+>", " ", typed.group(2)).strip()
+        return {**base, "kind": "skill", "by": "human", "skill": typed.group(1), "args": args[:ARGS_MAX], "ok": True}
+    if not prompt or prompt.startswith("<") or prompt.startswith(AUTOMATED):
+        return None
+    return {**base, "kind": "intent", "by": "human", "text": prompt.replace("\n", " ")[:INTENT_MAX]}
+
+
 def from_event(event: dict) -> dict | None:
     base = {"cwd": os.path.basename(event.get("cwd", "")), "sid": event.get("session_id")}
     tool, tool_input = event.get("tool_name"), event.get("tool_input", {})
     if event.get("hook_event_name") == "UserPromptSubmit":
-        prompt = event.get("prompt", "").strip()
-        return None if not prompt or prompt.startswith("<") else {**base, "kind": "intent", "by": "human", "text": prompt.replace("\n", " ")[:INTENT_MAX]}
+        return from_prompt(base, event.get("prompt", "").strip())
     if tool == "Skill":
         return {**base, "kind": "skill", "by": "model", "skill": tool_input.get("skill"), "args": str(tool_input.get("args", ""))[:ARGS_MAX], "ok": outcome(event)}
     if tool == "Bash" and (sig := signature(tool_input.get("command", ""))):

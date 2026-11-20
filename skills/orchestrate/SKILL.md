@@ -1,6 +1,6 @@
 ---
 name: orchestrate
-description: Run an epic as its orchestrator - split a design into agents with a dependency graph, write fleet.json, launch each READY wave, exchange messages with agents over the fleet bus, keep the epic's context, and finish when every agent is done. Use inside the orchestrator session of a fleet, or from any session to start one.
+description: Run an epic as its orchestrator - split a design into agents with a dependency graph, write fleet.json, launch each READY wave, exchange messages with agents over the fleet bus, keep the epic's context, and finish when every agent is done. Also to add or spin up a new agent for a new piece of work. Use inside the orchestrator session of a fleet, or from any session to start one.
 argument-hint: "[design.md or task description]"
 allowed-tools: Read, Write, Bash(python3:*), Bash(git:*), Bash(claude:*), Bash(cd:*)
 model: sonnet

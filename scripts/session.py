@@ -13,8 +13,9 @@ event = json.load(sys.stdin) if not sys.stdin.isatty() else {}
 root = st.root(event.get("cwd"))
 state = st.load(event.get("cwd"))
 print("sdlc verbs: init orient clarify plan red step why check debug review standards arch diagram wrap | pr rebase save load | "
-      "ide telemetry feedback reflect | fleet orchestrate par")
+      "run ide telemetry feedback reflect | fleet orchestrate sessions par")
 print("Flow: orient > clarify > plan > (red > step > why > check > commit)* > standards/arch > wrap. Tiny change: skip plan.")
+print("Type them namespaced: /sdlc:<verb> (for example /sdlc:rebase, /sdlc:reflect); a bare /rebase does nothing.")
 if workspace := os.environ.get("SDLC_AGENT_WORKSPACE"):
     print(f"Fleet agent workspace: {workspace} (edits outside it are denied; gates: {os.environ.get('SDLC_GATES', 'default')}).")
     if os.environ.get("SDLC_FLEET_ROOT"):
