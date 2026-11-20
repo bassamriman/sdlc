@@ -362,10 +362,12 @@ class FleetTests(unittest.TestCase):
         env = {"SDLC_AGENT_WORKSPACE": str(self.root / "api")}
         edit = {"tool_name": "Edit", "tool_input": {"file_path": str(self.root / "api/api/x.py")}}
         self.assertIn("/sdlc:init", run("isolate.py", cwd=self.root, stdin=edit, env=env).stderr, "no source edit before init")
-        (self.root / "api" / ".sdlc").mkdir(parents=True, exist_ok=True)
-        (self.root / "api" / ".sdlc" / "stack.json").write_text("{}")
+        clone = self.root / "api" / "api"  # the real layout: workspace/<repo>/.git, with .sdlc beside .git
+        (clone / ".git").mkdir(parents=True, exist_ok=True)
+        (clone / ".sdlc").mkdir(parents=True, exist_ok=True)
+        (clone / ".sdlc" / "stack.json").write_text("{}")
         self.assertIn("/sdlc:plan", run("isolate.py", cwd=self.root, stdin=edit, env=env).stderr, "no source edit before a plan")
-        (self.root / "api" / ".sdlc" / "plan.md").write_text("1. slice")
+        (clone / ".sdlc" / "plan.md").write_text("1. slice")
         inside = run("isolate.py", cwd=self.root, stdin=edit, env=env)
         outside = run("isolate.py", cwd=self.root, stdin={"tool_name": "Edit", "tool_input": {"file_path": str(self.root / "web/web/x.py")}}, env=env)
         message = run("isolate.py", cwd=self.root, stdin={"tool_name": "SendMessage", "tool_input": {"to": "sdlc/epic/web"}}, env=env)

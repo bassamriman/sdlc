@@ -17,12 +17,20 @@ def newest_change(repo: Path) -> float:
     return max([*times, float(head or 0)])
 
 
+def clone(workspace: Path) -> Path:
+    """The agent's clone: the workspace when it is a repository, else its one child that is."""
+    if (workspace / ".git").exists():
+        return workspace
+    return next((p for p in sorted(workspace.iterdir()) if (p / ".git").exists()), workspace)
+
+
 def main() -> int:
     event = json.load(sys.stdin) if not sys.stdin.isatty() else {}
     workspace = os.environ.get("SDLC_AGENT_WORKSPACE")
     if not workspace or os.environ.get("SDLC_AGENT_NAME") == "orchestrator" or event.get("stop_hook_active"):
         return 0  # a second stop in a row is let through, so the hook can never trap a session
-    repo, context = Path(workspace), Path(workspace) / ".sdlc" / "context.md"
+    repo = clone(Path(workspace))
+    context = repo / ".sdlc" / "context.md"
     saved = context.stat().st_mtime if context.exists() else 0.0
     if newest_change(repo) > saved:
         print(json.dumps({"decision": "block", "reason": "sdlc fleet: work changed since the last /sdlc:save; run /sdlc:save, then stop"}))

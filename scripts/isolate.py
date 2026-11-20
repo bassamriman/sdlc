@@ -118,12 +118,22 @@ def edit_decision(tool_input: dict, allowed: list[str], workspace: str) -> int:
     return 0
 
 
+def repo_of(path: str, home: str) -> str:
+    """The git repository holding the path (the agent's clone), else the workspace itself."""
+    here = os.path.dirname(path)
+    while here.startswith(home) and here != os.path.dirname(here):
+        if os.path.exists(os.path.join(here, ".git")):
+            return here
+        here = os.path.dirname(here)
+    return home
+
+
 def process_gap(target: str, workspace: str) -> str | None:
     """An agent edits source only after /sdlc:init and /sdlc:plan; .sdlc/ itself and the orchestrator are exempt."""
     real, home = os.path.realpath(target), os.path.realpath(workspace)
     if os.environ.get("SDLC_AGENT_NAME") == "orchestrator" or not real.startswith(home + os.sep) or "/.sdlc/" in real + "/":
         return None
-    sdlc = os.path.join(home, ".sdlc")
+    sdlc = os.path.join(repo_of(real, home), ".sdlc")  # the clone sits one level below the agent's workspace
     if not os.path.exists(os.path.join(sdlc, "stack.json")):
         return "/sdlc:init"
     return None if os.path.exists(os.path.join(sdlc, "plan.md")) else "/sdlc:plan"
