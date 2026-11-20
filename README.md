@@ -61,7 +61,7 @@ Defaults: a range or file defaults to the working tree against the recorded base
 **Scripts** (run from the shell; skills call the same ones):
 | Script | Parameters |
 |---|---|
-| `fleet.py` | `init <fleet.json> [--root <dir>]`, `status`, `view [--run]`, `ide <agent|orchestrator> [file[:line]] [--print]`, `waves`, `launch <agent\|orchestrator> [--run]`, `up [--run]`, `fanout <text> [--run]`, `wake <agent> [text] [--run]`, `orchestrate [--run] [--wait <seconds>]`, `prune [--done] [--run]`; without `--run` each prints what it would do |
+| `fleet.py` | `init <fleet.json> [--root <dir>]`, `status`, `view [--run]`, `ide <agent|orchestrator> [file[:line]] [--print]`, `waves`, `launch <agent\|orchestrator> [--run]`, `up [--run]`, `fanout <text> [--run]`, `wake <agent> [text] [--run]`, `orchestrate [--run] [--wait <seconds>]`, `prune [--done] [--run]`, `retire <agent> [--force] [--delete-clone] [--run]`; without `--run` each prints what it would do |
 | `bus.py` | `send <agent\|all\|orchestrator> <text>`, `inbox [--all]`, `peek`, `log` |
 | `archdiff.py` | `[base] [--print]` for the diff; `--repo [path] [--depth N] [--print]` for the current module map (depth 0 = one node per file) |
 | `render.py` | `<file.md> [--print]` renders Mermaid to a local page and opens it |

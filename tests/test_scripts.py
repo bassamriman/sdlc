@@ -350,6 +350,8 @@ class FleetTests(unittest.TestCase):
         self.assertIn("--model sonnet --effort low --permission-mode auto", command, "speed by default")
         self.assertEqual(run("fleet.py", "view", cwd=self.root).stdout.strip(), f"claude agents --cwd {self.root}")
         self.assertEqual(run("fleet.py", "ide", "nobody", cwd=self.root).returncode, 2)
+        self.assertEqual(run("fleet.py", "retire", "nobody", cwd=self.root).returncode, 2)
+        self.assertIn("not done", run("fleet.py", "retire", "contracts", cwd=self.root).stdout)
         fleet = json.loads((self.root / ".sdlc" / "fleet.json").read_text())
         (self.root / ".sdlc" / "fleet.json").write_text(json.dumps({**fleet, "plugin_dir": "/p/sdlc"}))
         self.assertIn("--plugin-dir /p/sdlc", run("fleet.py", "launch", "api", cwd=self.root).stdout)

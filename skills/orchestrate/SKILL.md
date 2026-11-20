@@ -15,4 +15,4 @@ Scripts: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/fleet.py"` and `bus.py`. Format
 5. **Blocked or stalled agent**: `blocked` status, or a name in `stalled` (saved in-progress, session not working; orchestrate wakes it once per step): read its `.sdlc/context.md`, decide, message it; if it needs a human, say so and stop.
 6. After every step, update `context.md` in your workspace (agents with status, open messages, next) and `<root>/resources/` for anything every agent must know: a contract that changed, a decision, an answer you gave twice.
 
-Output per step, max 12 lines: wave table, messages received, what you sent, next. Finish when `epic_done` is true: summarise PRs per agent.
+Output per step, max 12 lines: wave table, messages received, what you sent, next. When an agent's status is `done` (its PR merged and `/sdlc:pr done` ran), retire it: `fleet.py retire <agent> --run` ends its session; add `--delete-clone` only when the human asks (it refuses while anything is unpushed). Finish when `epic_done` is true: summarise PRs per agent, then `fleet.py prune --done --run`.

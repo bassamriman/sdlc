@@ -589,7 +589,48 @@ def ide(root: Path, args: list[str]) -> int:
     return subprocess.call([sys.executable, str(Path(__file__).with_name("ide.py")), target] + [a for a in args[1:] if a == "--print"])
 
 
+def unpushed(repo: Path) -> list[str]:
+    """Local commits or changes that would be lost with the clone: uncommitted files and commits on no remote branch."""
+    git = lambda *a: subprocess.run(["git", "-C", str(repo), *a], capture_output=True, text=True).stdout.strip()
+    return [line for line in (git("status", "--porcelain").splitlines() + git("log", "--oneline", "--branches", "--not", "--remotes").splitlines()) if line]
+
+
+def retire_plan(root: Path, agent: dict, args: list[str]) -> dict:
+    repo, sid = repo_dir(root, agent), session_id(root, agent["name"])
+    lost = unpushed(repo) if repo.exists() and "--delete-clone" in args else []
+    keep = "--delete-clone" not in args or bool(lost)
+    return {"agent": agent["name"], "session": sid[:8] if sid else None, "clone": "kept" if keep else str(repo), "unpushed": lost}
+
+
+def retire_run(root: Path, plan: dict) -> None:
+    if plan["session"]:
+        stop_and_wait(root, plan["agent"])
+        subprocess.run(["claude", "rm", plan["session"]], capture_output=True)
+    if plan["clone"] != "kept":
+        shutil.rmtree(Path(plan["clone"]).parent)
+
+
+def retire(root: Path, args: list[str]) -> int:
+    """`retire <agent> [--force] [--delete-clone] [--run]`: end a done agent's session and drop it from the agent view; the
+    clone stays unless --delete-clone, which refuses while anything is unpushed; the fleet.json record stays for dependents."""
+    agent = next((a for a in load_fleet(root)["agents"] if args and a["name"] == args[0]), None)
+    if agent is None:
+        print(f"unknown agent; one of {[a['name'] for a in load_fleet(root)['agents']]}")
+        return 2
+    status = read_status(root, agent)["status"]
+    if status != "done" and "--force" not in args:
+        print(f"{agent['name']} is {status}, not done; pass --force to retire it anyway")
+        return 2
+    plan = retire_plan(root, agent, args)
+    if "--run" in args:
+        retire_run(root, plan)
+    print(json.dumps({("retired" if "--run" in args else "would_retire"): plan}, indent=2))
+    return 0
+
+
 def dispatch(root: Path, cmd: str, args: list[str]) -> int:
+    if cmd == "retire":
+        return retire(root, args)
     if cmd == "ide":
         return ide(root, args)
     if cmd == "view":
