@@ -17,3 +17,5 @@ Read the diff once, in a single call (`git diff --stat` then the diff); never re
 
 Never defend the design on the user's behalf; surface what they must be able to explain themselves.
 Next: `/sdlc:check`, then commit.
+In a fleet session (`SDLC_FLEET_ROOT` set), do not stop here: run the `Next:` step yourself.
+In a fleet session (`SDLC_FLEET_ROOT` set) nobody is there to answer: skip the two questions, write the explanation and its GUESS lines into `.sdlc/why.md` for the human to read later, and continue.

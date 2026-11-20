@@ -16,3 +16,4 @@ If `engineering:debug` is installed, use it with this input and apply only the r
 
 Timebox: 10 minutes under a timebox; past that, revert to the last green tree and ship the thin version.
 Next: `/sdlc:check`.
+In a fleet session, instead of asking the user: send the orchestrator what is known and the three refuted hypotheses in one bus message, save **Status**: blocked with the reason, and end the turn.

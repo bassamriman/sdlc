@@ -14,3 +14,4 @@ effort: low
 
 Cover the slice's happy path plus the one edge case most likely to be wrong. Output: test diff and the failure line, nothing else. For larger test design use `engineering:testing-strategy` if installed.
 Next: `/sdlc:step <slice>`.
+In a fleet session (`SDLC_FLEET_ROOT` set), do not stop here: run the `Next:` step yourself.

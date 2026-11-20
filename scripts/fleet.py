@@ -311,7 +311,7 @@ def launch_command(root: Path, agent: dict, fleet: dict) -> str:
     workspace, repo = root / name, repo_dir(root, agent)
     base = fleet.get("base", "main")
     push = (f"Pushing this branch to origin ({agent['branch']}) is expected and approved for this epic; never force-push."
-            if gates.parse(gates.encode(fleet))["push"] == "auto" else "When the slice is done, push and open the draft PR with /sdlc:pr open; the push and PR gates ask the human, so wait for that approval and never work around a denial. As soon as you learn the PR merged, run /sdlc:pr done without asking (it cleans up and reports done to the orchestrator).")
+            if gates.parse(gates.encode(fleet))["push"] == "auto" else "When the slice is done, push and open the draft PR with /sdlc:pr open; the push and PR gates ask the human, so wait for that approval and never work around a denial. As soon as you learn the PR merged, run /sdlc:pr done without asking (it cleans up and reports done to the orchestrator). Work through every slice of your plan without stopping between them: after each commit go straight to the next slice. End your turn only when the brief is done, a gate is denied, or you need a decision only the human or the orchestrator can make, and say which.")
     prompt = (f"You are fleet agent {name} of epic {epic}. First sync: git fetch origin and rebase this branch onto origin/{base} "
               f"(/sdlc:rebase).{start_contract(root, agent, fleet)} {push} Then /sdlc:init, read your fleet inbox (bus.py inbox); then /sdlc:load if .sdlc/context.md exists, "
               f"otherwise read {workspace / 'BRIEF.md'} and start with /sdlc:orient. Read {shared_dir(root)} (the epic's resources: design, spec, contracts, decisions) "

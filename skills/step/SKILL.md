@@ -15,3 +15,4 @@ Rules, in priority order:
 
 Finish by running the slice test, then print: files changed, test result, one line per non-obvious choice.
 Next: `/sdlc:why`, then `/sdlc:check`, then commit.
+In a fleet session (`SDLC_FLEET_ROOT` set), do not stop here: run the `Next:` step yourself.

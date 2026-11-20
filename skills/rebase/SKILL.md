@@ -15,3 +15,4 @@ Base is `base_ref`/`base_sha` in `.sdlc/state.json`; `<base>` below is `base_ref
 
 Output, max 8 lines: commits replayed, files touched on both sides, conflicts resolved, check result.
 Next: `/sdlc:save`.
+In a fleet session, an undecidable conflict goes to the orchestrator in one bus message with both sides; save **Status**: blocked and end the turn.

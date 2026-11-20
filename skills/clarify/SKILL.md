@@ -20,3 +20,4 @@ Output, hard cap 8 bullets:
 For data modification always cover: validation rule, status codes or error values, idempotency, atomicity (all or nothing), and delete semantics (hard, soft, reversal).
 If a diagram exists under `.sdlc/design/`, turn each pitfall that depends on scale or intent into a question ("this loads every row per request; what data size should I design for?").
 Next: `/sdlc:plan <feature>`; for a change under about 20 lines, `/sdlc:red <slice>` directly.
+In a fleet session: never wait for answers. Send the open questions to the orchestrator in one bus message, proceed on the stated assumptions (written to `.sdlc/assumptions.md`), and continue to `/sdlc:plan`; revisit only if the answer contradicts an assumption.

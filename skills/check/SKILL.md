@@ -16,4 +16,4 @@ Rules:
 Next: commit (`git commit`), or `/sdlc:wrap` when the task is done.
 - `no .sdlc/stack.json` or `malformed .sdlc/stack.json` (exit 2) means the gate could not run: do what the line says (`/sdlc:init`, or fix the JSON), then rerun. Do not commit.
 
-When green, commit with the record (`${CLAUDE_PLUGIN_ROOT}/skills/check/references/record.md`): Assumptions, Design, and Pitfalls fixed or deferred; a commit that changes source also updates `docs/design/<branch>.md`. The commit gate refuses a commit without them.
+When green, commit with the record (`${CLAUDE_PLUGIN_ROOT}/skills/check/references/record.md`): Assumptions, Design, and Pitfalls fixed or deferred; a commit that changes source also updates `docs/design/<branch>.md`. The commit gate refuses a commit without them. In a fleet session, then continue to the next slice of the plan (`/sdlc:red`) without ending the turn; stop only when the plan is done, a gate is denied, or a decision is needed.
