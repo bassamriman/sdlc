@@ -641,7 +641,10 @@ def retire_plan(root: Path, agent: dict, args: list[str]) -> dict:
 
 
 def retire_run(root: Path, plan: dict) -> None:
-    if plan["session"]:
+    if plan["session"] and os.environ.get("SDLC_AGENT_NAME") == plan["agent"]:
+        later = f"sleep 20; claude stop {plan['session']}; claude rm {plan['session']}"  # retiring itself: let this turn end first
+        subprocess.Popen(["sh", "-c", later], start_new_session=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    elif plan["session"]:
         stop_and_wait(root, plan["agent"])
         subprocess.run(["claude", "rm", plan["session"]], capture_output=True)
     if plan["clone"] != "kept":
