@@ -23,12 +23,9 @@ FORCE = re.compile(r"(^|\s)(--force|-[a-zA-Z]*f[a-zA-Z]*|\+\S+)(\s|$)")
 RELEVANT = re.compile(r"\b(git|gh)\b")
 
 
-MODE: list = [None]  # the session's permission mode, from the hook event
-
-
-def decide(wanted: str, text: str) -> None:
-    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": gates.decision(MODE[0], wanted),
-                                             "permissionDecisionReason": gates.reason(MODE[0], wanted, text)}}))
+def decide(decision: str, reason: str) -> None:
+    """Gate prompts stay prompts in every mode: a human attached to a background session approves them there."""
+    print(json.dumps({"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": decision, "permissionDecisionReason": reason}}))
 
 
 def gate_open(cwd: str | None) -> bool:
@@ -82,7 +79,6 @@ def confirmations(command: str) -> None:
 
 def _main() -> int:
     event = json.load(sys.stdin)
-    MODE[0] = event.get("permission_mode")
     command = event.get("tool_input", {}).get("command", "")
     if os.environ.get("SDLC_GATE") == "off" or not RELEVANT.search(command):
         return 0

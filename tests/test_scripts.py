@@ -630,14 +630,11 @@ class E2EFleetTests(unittest.TestCase):
 
 
 class UnattendedTests(Repo):
-    def test_auto_mode_never_prompts_it_denies_with_the_reason(self) -> None:
-        for mode, expected in (("auto", "deny"), ("dontAsk", "deny"), ("default", "ask"), (None, "ask")):
+    def test_gates_prompt_in_auto_mode_so_an_attached_human_can_approve(self) -> None:
+        for mode in ("auto", "dontAsk", "default", None):
             event = {"cwd": str(self.dir), "tool_input": {"command": "git push origin main"}, **({"permission_mode": mode} if mode else {})}
-            out = json.loads(run("guard.py", cwd=self.dir, stdin=event).stdout)["hookSpecificOutput"]
-            self.assertEqual(out["permissionDecision"], expected, mode)
-        self.assertIn("nobody answers prompts", out["permissionDecisionReason"] if expected == "deny" else json.loads(run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "permission_mode": "auto", "tool_input": {"command": "git push"}}).stdout)["hookSpecificOutput"]["permissionDecisionReason"])
-        env = {"SDLC_GATES": "push=auto"}
-        self.assertEqual(run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "permission_mode": "auto", "tool_input": {"command": "git push"}}, env=env).stdout, "", "an auto gate stays silent")
+            self.assertEqual(json.loads(run("guard.py", cwd=self.dir, stdin=event).stdout)["hookSpecificOutput"]["permissionDecision"], "ask", mode)
+        self.assertEqual(run("guard.py", cwd=self.dir, stdin={"cwd": str(self.dir), "permission_mode": "auto", "tool_input": {"command": "git push"}}, env={"SDLC_GATES": "push=auto"}).stdout, "")
 
 
 class GateParseTests(unittest.TestCase):
