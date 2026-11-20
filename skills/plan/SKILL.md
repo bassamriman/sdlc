@@ -6,7 +6,6 @@ allowed-tools: Read, Grep, Glob, Write, Bash(python3:*)
 model: sonnet
 effort: low
 ---
-Set the phase: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/state.py" phase plan`.
 
 When the design has real options and no timebox is running (`python3 "${CLAUDE_PLUGIN_ROOT}/scripts/state.py" show` has no `budget_min`), ask the built-in `Plan` agent for two alternatives and recommend one with the trade-off in a sentence; under a timebox pick one yourself and state the trade-off in a sentence. Use `engineering:architecture` only when the decision deserves an ADR.
 

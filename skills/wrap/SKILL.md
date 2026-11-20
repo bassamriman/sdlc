@@ -5,10 +5,9 @@ allowed-tools: Read, Edit, Bash(git:*), Bash(python3:*), Agent
 model: sonnet
 effort: low
 ---
-Set the phase: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/state.py" phase wrap`.
 
 1. `/sdlc:check`; do not continue on red.
-2. Read `git diff <base_sha from .sdlc/state.json>` once end to end. Delete dead code and stray debug output.
+2. Read `git diff --stat <base_sha>` and `git diff <base_sha from .sdlc/state.json>` once, in one call, end to end; do not re-run it. Delete dead code and stray debug output.
 3. `/sdlc:review` on the same range (fan-out per lens, large diffs split by directory; one reviewer, standards+arch, while a timebox runs). Fix BLOCKER and MAJOR findings; list MINOR ones as follow-ups.
 4. Run `/simplify` if installed, then `/sdlc:check` again if anything changed.
 5. List untested branches in the diff, max 3 lines.

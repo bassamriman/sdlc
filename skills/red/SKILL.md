@@ -6,7 +6,6 @@ allowed-tools: Read, Grep, Glob, Edit, Write, Bash
 model: sonnet
 effort: low
 ---
-Set the phase: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/state.py" phase build`.
 
 1. State the test names and the expected values in plain words first, so the human can correct them. Expectations are the human's call; you fill the bodies.
 2. Reuse existing fixtures and factories; follow the repo's test style.

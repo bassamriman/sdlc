@@ -81,9 +81,11 @@ def nudge() -> int:
     if not os.environ.get("SDLC_FLEET_ROOT"):
         return 0
     root, me = identity()
-    unread = unread_count(root, me)
-    if unread:
-        print(f"[fleet bus] {unread} unread message(s) for {me}: run bus.py inbox before continuing")
+    rows = inbox(root, me, unread_only=True)  # reading marks them read, so the agent never has to call inbox itself
+    for r in rows[-10:]:
+        print(f"[fleet bus] {r['from']} -> {r['to']}: {r['text']}")
+    if len(rows) > 10:
+        print(f"[fleet bus] {len(rows) - 10} older unread message(s): bus.py inbox --all")
     return 0
 
 

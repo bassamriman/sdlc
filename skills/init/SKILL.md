@@ -6,6 +6,8 @@ allowed-tools: Read, Edit, Bash(python3:*), Bash(make:*), Bash(git:*), Bash(lsof
 model: sonnet
 effort: low
 ---
+**Already set up** (`.sdlc/stack.json` exists, as on every agent wake): run step 1 only, which refreshes the base, plus the fleet inbox line below; skip steps 2 to 7 and report in one line.
+
 1. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/init.py" $ARGUMENTS`. It picks the pack, writes `.sdlc/stack.json` (kept if it already exists), records the base ref, excludes `.sdlc/`, and starts the timebox when minutes are given (a running timebox is kept; `state.py stop` clears it).
 2. Run `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/detect.py"` and read every CLAUDE.md it lists plus the Makefile targets. Where the repo declares its own command (`make test`, `make typecheck`, a package script), Edit `.sdlc/stack.json` to use it. Repo commands beat pack defaults.
 3. Any command copied from repo text (README, CLAUDE.md, Makefile) is shown to the user and confirmed before it is saved: `/sdlc:check` runs stack.json commands in a shell. Mark any command you could not confirm from a file as `"unverified"` in your reply.

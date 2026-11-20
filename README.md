@@ -49,7 +49,8 @@ Session-only: `claude --plugin-dir "$(pwd)"`, then `/reload-plugins` after edits
 | ship | `pr open [--ready] \| address \| view [files\|checks\|commits] \| done` | draft PR with a concise body and a diagram per kind of change; triage and answer review comments and red checks; view in Chrome; after merge: back to the base, clear the PR and timebox | 10 |
 | | `rebase` | preflight, semantic-conflict preview, `--onto`, recheck, `--force-with-lease` | 8 |
 | resume | `save` / `load` | `.sdlc/context.md` snapshot; session hook digests it on start | 40 / 8 |
-| tooling | `ide [file[:line]] [--print]` | PyCharm, IDEA, GoLand, RustRover, WebStorm, VS Code, Cursor by stack | 1 |
+| tooling | `run [--smoke] [--stop]` | boot the app from this clone: the repo's own command, blockers (ports, tools, env) first, health-checked URLs; `--smoke` opens the UI and GETs the documented API pages | 10 |
+| | `ide [file[:line]] [--print]` | PyCharm, IDEA, GoLand, RustRover, WebStorm, VS Code, Cursor by stack | 1 |
 | self-improvement | `telemetry on\|off\|status` · `feedback <text> [about]` · `reflect [focus]` | opt-in local log; reflect proposes plugin changes, never edits | 12 |
 | multi-agent | `fleet init <fleet.json> \| status \| run \| launch <agent>` | one isolated named session per agent, waves from the dependency graph | 12 |
 | | `orchestrate [design]` | orchestrator session: split a design into agents with a dependency graph, write fleet.json, launch READY waves, answer agents over the bus, keep `resources/` current, finish when every agent is done | 12 |

@@ -6,7 +6,7 @@ allowed-tools: Read, Grep, Glob, Bash(git:*), Bash(python3:*)
 model: sonnet
 effort: low
 ---
-Read-only. Set the phase: `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/state.py" phase orient`.
+Read-only.
 
 Read the project's CLAUDE.md/README first, then the model, API and test files nearest `$ARGUMENTS`. For a broad sweep, delegate to the built-in `Explore` agent and keep only its conclusion.
 

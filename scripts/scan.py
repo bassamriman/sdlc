@@ -169,6 +169,18 @@ def plan_files(root) -> set[str]:
     return {f.strip() for group in re.findall(r"files:\s*([^|\n]+)", text) for f in group.split(",") if f.strip()}
 
 
+def slice_warn_due(root, lines: int) -> bool:
+    """Warn once per commit, and again only each time the diff grows by another full limit; never on every edit."""
+    head = st.git(root, "rev-parse", "HEAD").strip()
+    state = st.load(str(root))
+    step = lines // SLICE_LINES
+    last = state.get("slice_warned", "")
+    if last.startswith(head + ":") and int(last.split(":")[1] or 0) >= step:
+        return False
+    st.save({**state, "slice_warned": f"{head}:{step}"}, str(root))
+    return True
+
+
 def slice_findings(file: str, root) -> list[str]:
     rows = [line.split("\t") for line in st.git(root, "diff", "--numstat", "HEAD", "--", *st.EXCLUDE).splitlines()]
     rows = [r for r in rows if len(r) == 3 and not SLICE_SKIP.search(r[2])]
@@ -176,7 +188,7 @@ def slice_findings(file: str, root) -> list[str]:
     untracked = [p for p in st.git(root, "ls-files", "--others", "--exclude-standard", "--", *st.EXCLUDE).splitlines() if not SLICE_SKIP.search(p)]
     files = len(rows) + len(untracked)
     found = []
-    if lines > SLICE_LINES or files > SLICE_FILES:
+    if (lines > SLICE_LINES or files > SLICE_FILES) and slice_warn_due(root, lines):
         found.append(f"slice: {lines} uncommitted lines in {files} files; run /sdlc:why and /sdlc:check, then commit, or split")
     rel = os.path.relpath(os.path.realpath(file), os.path.realpath(root))
     planned = plan_files(root)

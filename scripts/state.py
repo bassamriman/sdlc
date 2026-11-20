@@ -114,6 +114,21 @@ def record_base(state: dict) -> dict:
     return {**state, "base_ref": found[0], "base_sha": found[1]} if found else state
 
 
+SKILL_PHASE = {"sdlc:orient": "orient", "sdlc:clarify": "plan", "sdlc:plan": "plan", "sdlc:red": "build", "sdlc:step": "build", "sdlc:wrap": "wrap"}
+
+
+def phase_hook() -> int:
+    """PostToolUse on Skill: the skill that ran sets the timebox phase, so no skill has to call `state.py phase`."""
+    event = json.load(sys.stdin) if not sys.stdin.isatty() else {}
+    phase = SKILL_PHASE.get(str(event.get("tool_input", {}).get("skill", "")))
+    cwd = event.get("cwd")
+    if phase and (root(cwd) / ".sdlc").exists():
+        state = load(cwd)
+        if state.get("phase") != phase:
+            save({**state, "phase": phase}, cwd)
+    return 0
+
+
 TRANSITIONS = {
     "start": lambda s, a: {**s, "started": time.time(), "budget_min": int(a[0]), "phase": "orient"},
     "stop": lambda s, a: {k: v for k, v in s.items() if k not in TIMEBOX_KEYS},
@@ -127,6 +142,8 @@ TRANSITIONS = {
 
 def main(argv: list[str]) -> int:
     cmd, args = (argv[1] if len(argv) > 1 else "show"), argv[2:]
+    if cmd == "hook":
+        return phase_hook()
     state = load()
     if cmd in TRANSITIONS:
         save(TRANSITIONS[cmd](state, args))

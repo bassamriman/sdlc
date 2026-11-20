@@ -421,8 +421,8 @@ class OrchestratorTests(FleetTests):
         first = run("bus.py", "inbox", cwd=self.root, env=orch).stdout
         self.assertIn("api -> orchestrator: contract v1 published", first)
         self.assertEqual(run("bus.py", "inbox", cwd=self.root, env=orch).stdout, "", "read once, then the cursor moves")
-        self.assertIn("1 unread", run("bus.py", "nudge", cwd=self.root, env=api).stdout)
-        self.assertIn("orchestrator -> all: freeze", run("bus.py", "inbox", cwd=self.root, env=api).stdout)
+        self.assertIn("orchestrator -> all: freeze", run("bus.py", "nudge", cwd=self.root, env=api).stdout, "the nudge shows the message itself")
+        self.assertEqual(run("bus.py", "inbox", cwd=self.root, env=api).stdout, "", "and marks it read")
         self.assertEqual(run("bus.py", "nudge", cwd=self.root, env=api).stdout, "")
         self.assertEqual(run("bus.py", "nudge", cwd=self.root).stdout, "", "silent outside a fleet session")
 
@@ -666,6 +666,20 @@ class StopGateTests(Repo):
         (self.dir / ".sdlc" / "context.md").write_text("**Status**: in-progress\n")
         self.assertEqual(run("stopgate.py", cwd=self.dir, stdin={}, env=env).stdout, "")
         self.assertEqual(run("stopgate.py", cwd=self.dir, stdin={}, env={"SDLC_AGENT_WORKSPACE": ""}).stdout, "", "inert outside a fleet")
+
+
+class ReflectFixTests(Repo):
+    def test_skill_sets_the_phase_and_the_slice_warning_fires_once(self) -> None:
+        run("state.py", "start", "60", cwd=self.dir)
+        run("state.py", "hook", cwd=self.dir, stdin={"cwd": str(self.dir), "tool_input": {"skill": "sdlc:red"}})
+        self.assertEqual(json.loads(run("state.py", "show", cwd=self.dir).stdout)["phase"], "build")
+        for i in range(9):  # more files than one slice allows
+            (self.dir / f"m{i}.py").write_text(f"x = {i}\n")
+        event = {"cwd": str(self.dir), "tool_input": {"file_path": str(self.dir / "m0.py")}}
+        first = run("scan.py", cwd=self.dir, stdin=event).stderr
+        second = run("scan.py", cwd=self.dir, stdin=event).stderr
+        self.assertIn("uncommitted lines", first)
+        self.assertNotIn("uncommitted lines", second, "once per commit, not on every edit")
 
 
 class CommentWordingTests(unittest.TestCase):
