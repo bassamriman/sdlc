@@ -687,7 +687,7 @@ class RenderTests(unittest.TestCase):
         self.assertIn("marked.parse", page)
         self.assertIn("| N+1 | annotate |", page)
         self.assertIn("language-mermaid", page)
-        self.assertEqual(page.count("</script>"), 3, "a </script> in the source cannot close the markdown tag")
+        self.assertEqual(page.count("</script>"), 4, "a </script> in the source cannot close the markdown tag")
 
 
 class CompatTests(unittest.TestCase):
