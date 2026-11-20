@@ -15,4 +15,4 @@ Rules, in priority order:
 
 Finish by running the slice test, then print: files changed, test result, one line per non-obvious choice.
 Next: `/sdlc:why`, then `/sdlc:check`, then commit.
-In a fleet session (`SDLC_FLEET_ROOT` set), do not stop here: run the `Next:` step yourself.
+In a fleet session (`SDLC_FLEET_ROOT` set), do not stop here: skip `/sdlc:why` per slice (nobody reads it until review) and go straight to `/sdlc:check` and the commit; `/sdlc:wrap` runs `/sdlc:why` once over the whole branch.

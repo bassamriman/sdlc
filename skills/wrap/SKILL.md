@@ -11,6 +11,7 @@ effort: low
 3. `/sdlc:review` on the same range (fan-out per lens, large diffs split by directory; one reviewer, standards+arch, while a timebox runs). Fix BLOCKER and MAJOR findings; list MINOR ones as follow-ups.
 4. Run `/simplify` if installed, then `/sdlc:check` again if anything changed.
 5. List untested branches in the diff, max 3 lines.
+6. In a fleet session, run `/sdlc:why` once over the whole branch here (written to `.sdlc/why.md`), since slices skipped it.
 
 Output, hard cap 10 lines:
 - What changed and why, in two sentences; if a brief-mode diagram exists, say which of its pitfalls you fixed and which you left, and why.
