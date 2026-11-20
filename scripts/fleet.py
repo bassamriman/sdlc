@@ -73,14 +73,33 @@ PR_URL = re.compile(r"https://github\.com/[\w.-]+/[\w.-]+/pull/\d+")
 
 
 def merged_on_github(repo: Path, agent: dict, pr: str | None) -> bool:
-    """The agent's PR is merged: by its URL when known, else any merged PR whose head is the agent's branch."""
-    query = ["gh", "pr", "view", pr, "--json", "state", "-q", ".state"] if pr else \
-        ["gh", "pr", "list", "--head", agent.get("branch", ""), "--state", "merged", "--json", "number", "-q", "length"]
+    """The agent's PR is merged: by its URL when known; else a merged PR on the agent's branch whose head contains this
+    clone's HEAD, so a branch name reused after a reset never inherits an old PR. A positive answer is cached, since a
+    merge is permanent, to keep status calls off the network."""
+    cache = repo / ".sdlc" / "merged"
+    if cache.exists():
+        return True
+    merged = pr_merged_by_url(repo, pr) if pr else pr_merged_by_branch(repo, agent.get("branch", ""))
+    if merged and cache.parent.exists():
+        cache.write_text(pr or agent.get("branch", ""))
+    return merged
+
+
+def gh_out(repo: Path, *args: str) -> str:
     try:
-        out = subprocess.run(query, cwd=repo, capture_output=True, text=True, timeout=20).stdout.strip()
+        return subprocess.run(["gh", *args], cwd=repo, capture_output=True, text=True, timeout=20).stdout.strip()
     except (OSError, subprocess.TimeoutExpired):
-        return False
-    return out == "MERGED" if pr else out not in ("", "0")
+        return ""
+
+
+def pr_merged_by_url(repo: Path, pr: str) -> bool:
+    return gh_out(repo, "pr", "view", pr, "--json", "state", "-q", ".state") == "MERGED"
+
+
+def pr_merged_by_branch(repo: Path, branch: str) -> bool:
+    heads = gh_out(repo, "pr", "list", "--head", branch, "--state", "merged", "--json", "headRefOid", "-q", ".[].headRefOid").split()
+    contains = lambda oid: subprocess.run(["git", "-C", str(repo), "merge-base", "--is-ancestor", "HEAD", oid], capture_output=True).returncode == 0
+    return any(contains(oid) for oid in heads)
 
 
 def deps(agent: dict, phase: str) -> list[str]:
@@ -720,7 +739,10 @@ def reset(root: Path, args: list[str]) -> int:
         return 0
     kept = reset_run(root, agent, fleet)
     print(json.dumps({"reset": agent["name"], "work_kept_on": kept}, indent=2))
-    return launch(root, [agent["name"], "--run"])
+    code = launch(root, [agent["name"], "--run"])
+    if code == 0:
+        _store(launched_file(root), sorted(set(_load(launched_file(root), [])) | {agent["name"]}))
+    return code
 
 
 def dispatch(root: Path, cmd: str, args: list[str]) -> int:

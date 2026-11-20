@@ -103,7 +103,11 @@ def bash_decision(tool_input: dict, allowed: list[str], cwd: str) -> None:
         return decide("deny", f"sdlc fleet: write into the plugin denied: {plugin}")
     strays = [t for t in targets if not inside(t, allowed, system_ok=True)]
     if strays:
-        decide("ask", f"sdlc fleet: command writes or changes git state outside the workspace: {strays[0]}")
+        return decide("ask", f"sdlc fleet: command writes or changes git state outside the workspace: {strays[0]}")
+    workspace = os.environ.get("SDLC_AGENT_WORKSPACE", "")
+    missing = next((m for t in targets if "$" not in t for m in [process_gap(t, workspace)] if m), None)
+    if missing:
+        decide("deny", f"sdlc fleet: no source edits before {missing}, through the shell either; run it first")
 
 
 def edit_decision(tool_input: dict, allowed: list[str], workspace: str) -> int:
@@ -119,13 +123,15 @@ def edit_decision(tool_input: dict, allowed: list[str], workspace: str) -> int:
 
 
 def repo_of(path: str, home: str) -> str:
-    """The git repository holding the path (the agent's clone), else the workspace itself."""
-    here = os.path.dirname(path)
+    """The folder whose .sdlc governs the path: the nearest one that has .sdlc (so a submodule or nested repo inside the
+    clone is still governed by the clone), else the nearest git repository, else the workspace itself."""
+    chain, here = [], os.path.dirname(path)
     while here.startswith(home) and here != os.path.dirname(here):
-        if os.path.exists(os.path.join(here, ".git")):
-            return here
+        chain.append(here)
         here = os.path.dirname(here)
-    return home
+    chain.append(home)
+    with_sdlc = next((d for d in chain if os.path.isdir(os.path.join(d, ".sdlc"))), None)
+    return with_sdlc or next((d for d in chain if os.path.exists(os.path.join(d, ".git"))), home)
 
 
 def process_gap(target: str, workspace: str) -> str | None:

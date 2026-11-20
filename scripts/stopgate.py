@@ -12,7 +12,8 @@ from pathlib import Path
 def newest_change(repo: Path) -> float:
     """Latest mtime among uncommitted files outside .sdlc/, or the HEAD commit time."""
     names = subprocess.run(["git", "status", "--porcelain", "-uall"], cwd=repo, capture_output=True, text=True).stdout.splitlines()
-    times = [(repo / n[3:]).stat().st_mtime for n in names if not n[3:].startswith(".sdlc/") and (repo / n[3:]).exists()]
+    paths = [n[3:].split(" -> ")[-1].strip('"') for n in names]  # a rename reports "old -> new"
+    times = [(repo / p).stat().st_mtime for p in paths if not p.startswith(".sdlc/") and (repo / p).exists()]
     head = subprocess.run(["git", "log", "-1", "--format=%ct"], cwd=repo, capture_output=True, text=True).stdout.strip()
     return max([*times, float(head or 0)])
 

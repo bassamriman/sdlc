@@ -391,6 +391,8 @@ class FleetTests(unittest.TestCase):
     def test_isolation_asks_on_bash_writes_outside_only(self) -> None:
         env = {"SDLC_AGENT_WORKSPACE": str(self.root / "api")}
         bash = lambda c: run("isolate.py", cwd=self.root, stdin={"tool_name": "Bash", "tool_input": {"command": c}}, env=env)
+        self.assertEqual(decision(bash(f"echo x > {self.root}/api/api/out.txt")), "deny", "shell writes face the process gate too")
+        ready_clone(self.root / "api" / "api")
         for command in (f"echo x > {self.root}/web/web/README.md", f"git -C {self.root}/web/web merge f",
                         f"cd {self.root}/web/web && git checkout f", f"cp -r skills {self.root}/web/"):
             self.assertEqual(decision(bash(command)), "ask", command)
@@ -399,6 +401,14 @@ class FleetTests(unittest.TestCase):
                         "cat > .sdlc/context.md <<'E'\n**Next**: /sdlc:pr open\nE", "echo done > /nonexistent-root-dir/x.txt",
                         "git status", f"cat {self.root}/web/web/README.md", "ls /usr/bin"):
             self.assertEqual(bash(command).stdout, "", command)
+
+
+def ready_clone(clone: Path) -> None:
+    """An agent clone after /sdlc:init and /sdlc:plan, so the process gate lets source writes through."""
+    for part in (".git", ".sdlc"):
+        (clone / part).mkdir(parents=True, exist_ok=True)
+    (clone / ".sdlc" / "stack.json").write_text("{}")
+    (clone / ".sdlc" / "plan.md").write_text("1. slice")
 
 
 def old_python() -> str | None:
@@ -511,6 +521,7 @@ class AuditHardeningTests(FleetTests):
     def test_isolation_closes_relative_env_protected_and_plugin_paths(self) -> None:
         env = {"SDLC_AGENT_WORKSPACE": str(self.root / "api"), "SDLC_FLEET_ROOT": str(self.root), "SDLC_AGENT_NAME": "api"}
         (self.root / "api" / "api" / ".claude").mkdir(exist_ok=True)
+        ready_clone(self.root / "api" / "api")
         for command in ("echo x > ../../web/web/README.md", f"cd {self.root}/web/web && echo x > README.md", f"python3 -c \"open('{self.root}/web/web/x','w')\"",
                         f"dd if=/dev/zero of={self.root}/web/web/x", f"git --git-dir={self.root}/web/web commit -m x"):
             self.assertEqual(decision(self.bash(command, env)), "ask", command)
@@ -705,6 +716,38 @@ class TelemetryIntentTests(unittest.TestCase):
         self.assertEqual(prompt("/sdlc:pr done")["skill"], "sdlc:pr")
         self.assertIsNone(prompt("Fleet: an agent reported; run fleet.py orchestrate --run"))
         self.assertEqual(prompt("boot the service")["kind"], "intent")
+
+
+class EdgeCaseTests(unittest.TestCase):
+    def test_submodule_inside_the_clone_is_governed_by_the_clone(self) -> None:
+        sys.path.insert(0, str(SCRIPTS))
+        import isolate
+        home = Path(tempfile.mkdtemp()) / "agent"
+        clone = home / "repo"
+        ready_clone(clone)
+        (clone / "vendor" / "lib" / ".git").mkdir(parents=True)
+        with unittest.mock.patch.dict(os.environ, {"SDLC_AGENT_NAME": "agent"}):
+            self.assertIsNone(isolate.process_gap(str(clone / "vendor" / "lib" / "x.py"), str(home)))
+            self.assertIsNone(isolate.process_gap(str(clone / "new" / "dir" / "x.py"), str(home)), "new folders still resolve")
+
+    def test_reused_branch_name_never_inherits_an_old_merged_pr(self) -> None:
+        sys.path.insert(0, str(SCRIPTS))
+        import fleet
+        repo = Path(tempfile.mkdtemp())
+        subprocess.run(["git", "init", "-q", str(repo)], check=True)
+        subprocess.run(["git", "-C", str(repo), "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", "new"], check=True)
+        with unittest.mock.patch.object(fleet, "gh_out", return_value="0" * 40):
+            self.assertFalse(fleet.pr_merged_by_branch(repo, "fix/x"), "the old PR head does not contain this HEAD")
+
+    def test_stop_gate_follows_renames(self) -> None:
+        d = Path(tempfile.mkdtemp())
+        git = lambda *a: subprocess.run(["git", "-C", str(d), "-c", "user.email=t@t", "-c", "user.name=t", *a], check=True, capture_output=True)
+        git("init", "-q"); (d / "a.py").write_text("x\n"); git("add", "."); git("commit", "-qm", "a")
+        (d / ".sdlc").mkdir(); (d / ".sdlc" / "context.md").write_text("saved\n")
+        time.sleep(0.05)
+        git("mv", "a.py", "b.py"); (d / "b.py").write_text("y\n")
+        out = run("stopgate.py", cwd=d, stdin={}, env={"SDLC_AGENT_WORKSPACE": str(d), "SDLC_AGENT_NAME": "a"}).stdout
+        self.assertIn("/sdlc:save", out, "a renamed file still counts as a change after the save")
 
 
 class PruneScopeTests(unittest.TestCase):
