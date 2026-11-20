@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import ast
 import json
+import time
 import os
 import shutil
 import subprocess
@@ -358,7 +359,13 @@ class FleetTests(unittest.TestCase):
 
     def test_isolation_denies_outside_and_asks_on_message(self) -> None:
         env = {"SDLC_AGENT_WORKSPACE": str(self.root / "api")}
-        inside = run("isolate.py", cwd=self.root, stdin={"tool_name": "Edit", "tool_input": {"file_path": str(self.root / "api/api/x.py")}}, env=env)
+        edit = {"tool_name": "Edit", "tool_input": {"file_path": str(self.root / "api/api/x.py")}}
+        self.assertIn("/sdlc:init", run("isolate.py", cwd=self.root, stdin=edit, env=env).stderr, "no source edit before init")
+        (self.root / "api" / ".sdlc").mkdir(parents=True, exist_ok=True)
+        (self.root / "api" / ".sdlc" / "stack.json").write_text("{}")
+        self.assertIn("/sdlc:plan", run("isolate.py", cwd=self.root, stdin=edit, env=env).stderr, "no source edit before a plan")
+        (self.root / "api" / ".sdlc" / "plan.md").write_text("1. slice")
+        inside = run("isolate.py", cwd=self.root, stdin=edit, env=env)
         outside = run("isolate.py", cwd=self.root, stdin={"tool_name": "Edit", "tool_input": {"file_path": str(self.root / "web/web/x.py")}}, env=env)
         message = run("isolate.py", cwd=self.root, stdin={"tool_name": "SendMessage", "tool_input": {"to": "sdlc/epic/web"}}, env=env)
         inert = run("isolate.py", cwd=self.root, stdin={"tool_name": "Edit", "tool_input": {"file_path": "/etc/hosts"}}, env={"SDLC_AGENT_WORKSPACE": ""})
@@ -646,6 +653,19 @@ class GateParseTests(unittest.TestCase):
         self.assertEqual(gates.parse("diagram=requre")["diagram"], "require")
         self.assertEqual(gates.parse("")["diagram"], "off")
         self.assertEqual(gates.parse("push=autoo")["push"], "ask")
+
+
+class StopGateTests(Repo):
+    def test_stop_is_refused_once_while_work_is_newer_than_the_save(self) -> None:
+        env = {"SDLC_AGENT_WORKSPACE": str(self.dir), "SDLC_AGENT_NAME": "api"}
+        (self.dir / "work.py").write_text("x = 1\n")
+        self.assertIn("/sdlc:save", run("stopgate.py", cwd=self.dir, stdin={}, env=env).stdout)
+        self.assertEqual(run("stopgate.py", cwd=self.dir, stdin={"stop_hook_active": True}, env=env).stdout, "", "never traps")
+        (self.dir / ".sdlc").mkdir(exist_ok=True)
+        time.sleep(0.05)
+        (self.dir / ".sdlc" / "context.md").write_text("**Status**: in-progress\n")
+        self.assertEqual(run("stopgate.py", cwd=self.dir, stdin={}, env=env).stdout, "")
+        self.assertEqual(run("stopgate.py", cwd=self.dir, stdin={}, env={"SDLC_AGENT_WORKSPACE": ""}).stdout, "", "inert outside a fleet")
 
 
 class CommentWordingTests(unittest.TestCase):

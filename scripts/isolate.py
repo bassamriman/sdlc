@@ -111,14 +111,30 @@ def edit_decision(tool_input: dict, allowed: list[str], workspace: str) -> int:
     if target and (not inside(target, allowed) or PROTECTED.search(os.path.realpath(target))):
         print(f"sdlc fleet: write outside workspace {workspace} or to a protected file denied: {target}", file=sys.stderr)
         return 2
+    missing = process_gap(target or "", workspace)
+    if missing:
+        print(f"sdlc fleet: no source edits before {missing}; run it first (a change under about 20 lines still gets a one-slice plan)", file=sys.stderr)
+        return 2
     return 0
+
+
+def process_gap(target: str, workspace: str) -> str | None:
+    """An agent edits source only after /sdlc:init and /sdlc:plan; .sdlc/ itself and the orchestrator are exempt."""
+    real, home = os.path.realpath(target), os.path.realpath(workspace)
+    if os.environ.get("SDLC_AGENT_NAME") == "orchestrator" or not real.startswith(home + os.sep) or "/.sdlc/" in real + "/":
+        return None
+    sdlc = os.path.join(home, ".sdlc")
+    if not os.path.exists(os.path.join(sdlc, "stack.json")):
+        return "/sdlc:init"
+    return None if os.path.exists(os.path.join(sdlc, "plan.md")) else "/sdlc:plan"
 
 
 def writable(workspace: str, event: dict) -> list[str]:
     """The workspace and the session scratchpad; for the orchestrator also resources/, which is its to write."""
     root = os.environ.get("SDLC_FLEET_ROOT")
     shared = os.path.join(root, "resources") if root and os.environ.get("SDLC_AGENT_NAME") == "orchestrator" else None
-    return [os.path.realpath(p) + os.sep for p in (workspace, event.get("scratchpad_dir"), shared) if p]
+    job = os.environ.get("CLAUDE_JOB_DIR")  # the session's own temp folder
+    return [os.path.realpath(p) + os.sep for p in (workspace, event.get("scratchpad_dir"), shared, job) if p]
 
 
 def _main() -> int:
