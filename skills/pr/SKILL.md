@@ -17,6 +17,6 @@ Show title and body, wait for yes, then `gh pr create --draft --title "<imperati
 
 **view [files|checks|commits]**: `url=$(gh pr view --json url -q .url)` (no PR: say so, suggest `open`); append `/files`, `/checks` or `/commits` when asked; then `open -a "Google Chrome" "$url"`, falling back to `gh pr view --web` if Chrome is not installed. Read-only; report the URL in one line.
 
-**done**: `gh pr view --json state -q .state`; not MERGED: say so and stop. Else `git switch <base> && git pull --ff-only`, `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/state.py" unset pr_url`, `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/state.py" stop`, then offer `git branch -d <branch>` (the guard asks).
+**done** (one step after a merge, no further questions): `gh pr view --json state,headRefName -q '.state+" "+.headRefName'`; not MERGED: say so and stop. Else, in order: `git switch <base> && git pull --ff-only`; `git branch -D <branch>` (the PR merged, so the branch is safe to delete even when squash-merged); `git push origin --delete <branch>` unless GitHub already deleted it (`git ls-remote --exit-code --heads origin <branch>`); `git fetch --prune`; `python3 "${CLAUDE_PLUGIN_ROOT}/scripts/state.py" unset pr_url` and `stop`; in a fleet, write `Status: done` with the PR link in `.sdlc/context.md` (the status hook tells the orchestrator). The guard asks once for the two deletions; report what was removed in one line.
 
 Output, max 10 lines (the body is a file, not output). Next: `/sdlc:save`; after a push, `/sdlc:rebase` if the base moved; once merged, `/sdlc:pr done`.
