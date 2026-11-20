@@ -221,6 +221,13 @@ def wake_now(root: Path, name: str, text: str) -> bool:
     return out.returncode == 0
 
 
+def is_duplicate(root: Path, agent: str, sid: str) -> bool:
+    """Another session under this agent's fleet name while its real one is known; an unknown real id (empty or partial
+    lookup) means nothing of it is pruned, and the orchestrator is never pruned."""
+    known = session_id(root, agent)
+    return known is not None and sid != known and agent != bus.ORCHESTRATOR
+
+
 def prune_victims(root: Path, *, finished: bool) -> list[str]:
     """Only the fleet's own leftovers: an idle session carrying a fleet session name (sdlc/<epic>/<agent>) that is not that
     agent's recorded session; with finished, also done agents' real sessions. A session the human opened (any other name),
@@ -234,10 +241,7 @@ def prune_victims(root: Path, *, finished: bool) -> list[str]:
         sid, title = row.get("sessionId"), row.get("name", "")
         if not sid or title not in titles or row.get("status") == "busy":
             continue
-        agent = titles[title]
-        known = session_id(root, agent)  # no known real session for this agent (empty or partial lookup): prune nothing of it
-        duplicate = known is not None and sid != known and agent != bus.ORCHESTRATOR
-        if duplicate or (finished and owner.get(sid) in done):
+        if is_duplicate(root, titles[title], sid) or (finished and owner.get(sid) in done):
             victims.append(row.get("id") or sid[:8])
     return victims
 
