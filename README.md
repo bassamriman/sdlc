@@ -53,7 +53,7 @@ Session-only: `claude --plugin-dir "$(pwd)"`, then `/reload-plugins` after edits
 | self-improvement | `telemetry on\|off\|status` · `feedback <text> [about]` · `reflect [focus]` | opt-in local log; reflect proposes plugin changes, never edits | 12 |
 | multi-agent | `fleet init <fleet.json> \| status \| run \| launch <agent>` | one isolated named session per agent, waves from the dependency graph | 12 |
 | | `orchestrate [design]` | orchestrator session: split a design into agents with a dependency graph, write fleet.json, launch READY waves, answer agents over the bus, keep `resources/` current, finish when every agent is done | 12 |
-| | `sessions [fleet root] [ide <agent> [file[:line]]]` | the agent view filtered to the fleet: prints `claude agents --cwd <root>` and lists each session's status, flagging blocked or failed ones | 10 |
+| | `sessions [fleet root] [ide <agent> [file[:line]] \| retire <agent> [--delete-clone]]` | the agent view filtered to the fleet: prints `claude agents --cwd <root>` and lists each session's status, flagging blocked or failed ones | 10 |
 | | `par [slice numbers]` | independent slices in parallel worktrees inside one repo | 10 |
 
 Defaults: a range or file defaults to the working tree against the recorded base; `--keep` writes the diagram to `docs/design/` instead of the untracked `.sdlc/design/`; `--show` renders it in Chrome; `--full` forces the fan-out review even under a timebox; `--ready` opens the PR ready instead of draft; `--print` shows the IDE command without running it.
