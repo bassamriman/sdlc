@@ -416,6 +416,20 @@ def launch(root: Path, args: list[str]) -> int:
     return subprocess.run(command, shell=True).returncode if "--run" in args else 0
 
 
+def retired_file(root: Path) -> Path:
+    return root / bus.ORCHESTRATOR / "retired.json"
+
+
+def retired(root: Path) -> set[str]:
+    return set(_load(retired_file(root), []))
+
+
+def active(root: Path) -> list[str]:
+    """Agents a broadcast may wake: not retired and not done. Done or retired agents never come back on a broadcast."""
+    gone = retired(root) | set(waves(root)["done"])
+    return [a["name"] for a in load_fleet(root)["agents"] if a["name"] not in gone]
+
+
 def launched_file(root: Path) -> Path:
     return root / bus.ORCHESTRATOR / "launched.json"
 
@@ -424,7 +438,7 @@ def launch_new(root: Path, ready: list[str], *, run: bool) -> list[str]:
     """Launch READY agents not launched before; the launched set lives in orchestrator/launched.json."""
     fleet, path = load_fleet(root), launched_file(root)
     launched = set(_load(path, []))
-    started = [name for name in ready if name not in launched]
+    started = [name for name in ready if name not in launched and name not in retired(root)]
     for name in started:
         command = launch_command(root, next(a for a in fleet["agents"] if a["name"] == name), fleet)
         if run:
@@ -473,7 +487,8 @@ def wake_reasons(root: Path, entry: dict) -> list[str]:
 def wake_waiting(root: Path, current: dict, *, run: bool) -> tuple[list[str], list[str]]:
     """Wake idle agents with unread messages, a landed merge dependency, a landed branch, or a session that stopped mid-brief."""
     woken, stalled = [], []
-    for entry in current["running"]:
+    gone = retired(root)
+    for entry in (e for e in current["running"] if e["name"] not in gone):
         name, reasons = entry["name"], wake_reasons(root, entry)
         state = session_state(root, name)
         if entry["status"] == "in-progress" and not reasons and state in ("idle", "stopped"):
@@ -557,16 +572,20 @@ def up(root: Path, *, run: bool) -> dict:
 
 def fanout(root: Path, text: str, *, run: bool) -> dict:
     """Broadcast from the orchestrator identity, then wake every idle agent so nobody waits for a doorbell."""
-    bus.send((root, bus.ORCHESTRATOR), "all", text)
+    if run:
+        bus.send((root, bus.ORCHESTRATOR), "all", text)
     woken = []
-    for agent in load_fleet(root)["agents"]:
+    for name in active(root):
         text = "Fleet: new broadcast, run bus.py inbox and act on it, then /sdlc:save."
-        if session_state(root, agent["name"]) in ("idle", "stopped") and (wake_now(root, agent["name"], text) if run else True):
-            woken.append(agent["name"])
+        if session_state(root, name) in ("idle", "stopped") and (wake_now(root, name, text) if run else True):
+            woken.append(name)
     return {"sent_to": "all", "woken": woken}
 
 
 def wake(root: Path, args: list[str]) -> int:
+    if args and args[0] in retired(root):
+        print(f"{args[0]} is retired; it is not woken")
+        return 2
     text = " ".join(a for a in args[1:] if a != "--run") or "Fleet: new messages, run bus.py inbox and continue your brief."
     command = wake_command(root, args[0], text)
     print(command or f"no session found named {session_name(root, args[0])}; launch it first")
@@ -627,6 +646,7 @@ def retire_run(root: Path, plan: dict) -> None:
         subprocess.run(["claude", "rm", plan["session"]], capture_output=True)
     if plan["clone"] != "kept":
         shutil.rmtree(Path(plan["clone"]).parent)
+    _store(retired_file(root), sorted(retired(root) | {plan["agent"]}))
 
 
 def retire(root: Path, args: list[str]) -> int:

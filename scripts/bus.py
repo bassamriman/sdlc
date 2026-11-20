@@ -37,7 +37,8 @@ def doorbells(root: Path, record: dict) -> list[dict]:
     """Native SendMessage calls the sender should make next: one per recipient session, pointing at the outbox, never carrying the payload."""
     epic = os.environ.get("SDLC_EPIC", "")
     fleet = json.loads((root / ".sdlc" / "fleet.json").read_text()) if (root / ".sdlc" / "fleet.json").exists() else {"agents": []}
-    names = [a["name"] for a in fleet["agents"]] + [ORCHESTRATOR] if record["to"] == "all" else [record["to"]]
+    gone = set(json.loads((root / ORCHESTRATOR / "retired.json").read_text())) if (root / ORCHESTRATOR / "retired.json").exists() else set()
+    names = [a["name"] for a in fleet["agents"] if a["name"] not in gone] + [ORCHESTRATOR] if record["to"] == "all" else [record["to"]]
     note = f"fleet bus: new message from {record['from']} in {outbox(root, record['from'])}; run bus.py inbox"
     return [{"to": f"sdlc/{epic}/{n}", "message": note} for n in names if n != record["from"]]
 
