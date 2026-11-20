@@ -500,7 +500,7 @@ def orchestrate(root: Path, *, run: bool) -> dict:
     finished = len(current["done"]) == len(fleet["agents"])
     pruned = prune(root, finished=finished, run=run)  # copies always; finished agents' sessions once the epic is done
     return {**current, "launched_now": started, "woken": woken, "stalled": stalled, "base_moved_to": moved, **pruned, "messages": bus.inbox(root, bus.ORCHESTRATOR), "epic_done": finished,
-            "next": "all agents done: wrap the epic" if finished else "wait for status changes or messages (orchestrate --wait), then run again"}
+            "next": "all agents done: wrap the epic" if finished else "end your turn; status hooks and messages wake you"}
 
 
 def snapshot(root: Path) -> str:
